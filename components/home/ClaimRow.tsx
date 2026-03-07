@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import styles from './claimrow.module.css';
-import { ClaimSource, PopularClaim, Post } from '@/app/types/types';
+import { ClaimSource, PopularClaim, Post } from '@/types/types';
 
 function getIconAndName(claimSrc: ClaimSource) {
   switch (claimSrc) {

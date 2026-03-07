@@ -1,4 +1,4 @@
-import { ClaimSource, PopularClaim } from '@/app/types/types';
+import { PopularClaim } from '@/types/types';
 import ClaimRow from './ClaimRow';
 import styles from './popularclaims.module.css';
 import React from 'react';

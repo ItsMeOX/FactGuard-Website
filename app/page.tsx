@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import styles from './home.module.css';
-import PopularClaims from './components/home/PopularClaims';
-import { ClaimSource, PopularClaim } from './types/types';
+import { ClaimSource, PopularClaim } from '@/types/types';
+import PopularClaims from '@/components/home/PopularClaims';
 
 const popularClaims: PopularClaim[] = [
   {
