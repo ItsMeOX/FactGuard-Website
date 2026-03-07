@@ -66,7 +66,7 @@ function mapPostRankingToRecentClaims(
   return data.posts.map((p) => ({
     id: p.id,
     title: p.headline ?? 'Untitled',
-    description: '',
+    description: p.aiSummary ?? '',
     imgUrl: p.thumbnailUrl ?? FALLBACK_THUMBNAIL,
     source: mapSourceTypeToClaimSource(p.sourceType),
     commentCount: p.commentCount,

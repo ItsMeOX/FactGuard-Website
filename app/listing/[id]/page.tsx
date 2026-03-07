@@ -13,6 +13,11 @@ import Comment from '@/components/listingdetail/Comment';
 
 const FALLBACK_THUMBNAIL = '/medical_claim.png';
 
+function isAbsoluteUrl(url: string): boolean {
+  const trimmed = url.trim();
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+}
+
 const PLACEHOLDER_DATA: ListingDetailData = {
   id: '',
   title: 'Loading...',
@@ -106,9 +111,25 @@ export default function DetailPage() {
       <div className={styles.section}>
         <span className={styles.sectionTitle}>Information section</span>
         <div className={styles.srcWrapper}>
-          <Image src={srcIcon} alt='src icon' width={30} height={30} />
+          <Image src={srcIcon} alt='' width={30} height={30} />
           <span>{srcName}</span>
         </div>
+        {displayData.sourceUrl.trim() ? (
+          <div className={styles.sourceUrlBlock}>
+            {isAbsoluteUrl(displayData.sourceUrl) ? (
+              <a
+                href={displayData.sourceUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+                className={styles.sourceUrlLink}
+              >
+                {displayData.sourceUrl}
+              </a>
+            ) : (
+              <span className={styles.sourceUrlText}>{displayData.sourceUrl}</span>
+            )}
+          </div>
+        ) : null}
       </div>
       <div className={styles.section}>
         <span className={styles.sectionTitle}>

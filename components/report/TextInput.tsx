@@ -7,12 +7,14 @@ export default function TextInput({
   iconUrl,
   placeholder,
   required = false,
+  type = 'text',
 }: {
   title: string;
   onInput: (url: string) => void;
   iconUrl?: string;
   placeholder?: string;
   required?: boolean;
+  type?: 'text' | 'password';
 }) {
   return (
     <div className={styles.container}>
@@ -24,7 +26,7 @@ export default function TextInput({
       <div className={styles.inputSection}>
         <input
           onChange={(e) => onInput(e.target.value)}
-          type='text'
+          type={type}
           placeholder={placeholder}
         />
       </div>

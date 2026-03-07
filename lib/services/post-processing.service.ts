@@ -16,7 +16,7 @@ export async function processPost(postId: string): Promise<void> {
   try {
     const reports = await prisma.report.findMany({
       where: { postId },
-      select: { headline: true, reportDescription: true },
+      select: { headline: true, reportDescription: true, supportingEvidence: true },
     });
 
     const categories = await prisma.category.findMany({

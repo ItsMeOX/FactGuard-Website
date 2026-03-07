@@ -74,7 +74,13 @@ function buildUserPrompt(input: AnalysisInput): string {
 
   if (input.userReports.length > 0) {
     const reportsSection = input.userReports
-      .map((r) => `- "${r.headline}": ${r.reportDescription}`)
+      .map((r) => {
+        let block = `- "${r.headline}": ${r.reportDescription}`;
+        if (r.supportingEvidence?.trim()) {
+          block += `\n    Supporting evidence: ${r.supportingEvidence.trim()}`;
+        }
+        return block;
+      })
       .join("\n");
     sections.push(`\nUser Reports (${input.userReports.length}):\n${reportsSection}`);
   }

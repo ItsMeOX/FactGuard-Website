@@ -168,6 +168,7 @@ export default function RegisterPage() {
               title='Password'
               placeholder='password'
               onInput={handleInputPassword}
+              type='password'
             />
           </div>
 

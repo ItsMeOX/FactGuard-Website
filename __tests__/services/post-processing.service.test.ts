@@ -61,6 +61,7 @@ const mockReports = [
   {
     headline: "Misleading claim",
     reportDescription: "This article contains false information.",
+    supportingEvidence: null as string | null,
   },
 ];
 
@@ -105,7 +106,7 @@ describe("processPost", () => {
 
     expect(mockReportFindMany).toHaveBeenCalledWith({
       where: { postId: "post-uuid-1" },
-      select: { headline: true, reportDescription: true },
+      select: { headline: true, reportDescription: true, supportingEvidence: true },
     });
   });
 

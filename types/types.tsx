@@ -111,6 +111,7 @@ export type PostRankingApiResponse = {
     headline: string | null;
     sourceType: string;
     thumbnailUrl: string | null;
+    aiSummary: string | null;
     reportCount: number;
     commentCount: number;
     latestReportAt: string | null;

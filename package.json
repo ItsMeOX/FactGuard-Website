@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:clear": "npx tsx prisma/clear.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },

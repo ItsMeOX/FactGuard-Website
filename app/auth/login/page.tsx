@@ -109,6 +109,7 @@ export default function LoginPage() {
               title='Password'
               placeholder='password'
               onInput={handleInputPassword}
+              type='password'
             />
           </div>
 
@@ -122,7 +123,7 @@ export default function LoginPage() {
           </button>
           <span className={styles.newUser}>
             New user?
-            <Link href='/auth/register'>register</Link>
+            <Link href='/auth/register'>Register an account</Link>
           </span>
         </div>
         <div className={styles.artSection}>

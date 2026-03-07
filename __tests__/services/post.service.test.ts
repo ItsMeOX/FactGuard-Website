@@ -23,6 +23,7 @@ function makePost(overrides: Record<string, unknown> = {}) {
     headline: "Test headline",
     sourceType: "WEBPAGE",
     thumbnailUrl: "https://example.com/thumb.jpg",
+    aiSummary: null as string | null,
     reportCount: 5,
     createdAt: new Date("2026-03-01T00:00:00Z"),
     _count: { comments: 0 },
@@ -206,7 +207,7 @@ describe("getPostRanking", () => {
     expect(selectArg._count).toEqual({ select: { comments: true } });
     expect(selectArg).toHaveProperty("reports");
     expect(selectArg).not.toHaveProperty("scrapedContent");
-    expect(selectArg).not.toHaveProperty("aiSummary");
+    expect(selectArg).toHaveProperty("aiSummary");
   });
 });
 

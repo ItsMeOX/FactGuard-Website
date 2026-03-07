@@ -24,6 +24,7 @@ const validInput: AnalysisInput = {
     {
       headline: "Misleading vaccine claim",
       reportDescription: "This article makes false claims about vaccines.",
+      supportingEvidence: null,
     },
   ],
   categories: [
