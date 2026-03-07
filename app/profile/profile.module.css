@@ -11,6 +11,37 @@
   border-radius: 10px;
 }
 
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #e5e7eb 0%,
+    #f3f4f6 50%,
+    #e5e7eb 100%
+  );
+  background-size: 200% 100%;
+  animation: profileSkeletonShimmer 1.2s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes profileSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeletonValue {
+  height: 18px;
+  width: 60%;
+}
+
+.skeletonInput {
+  height: 44px;
+  width: 100%;
+}
+
 .title {
   color: #3c3d5e;
   font-weight: 700;

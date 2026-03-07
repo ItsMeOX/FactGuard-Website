@@ -25,6 +25,69 @@
   font-weight: 600;
 }
 
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #e5e7eb 0%,
+    #f3f4f6 50%,
+    #e5e7eb 100%
+  );
+  background-size: 200% 100%;
+  animation: detailSkeletonShimmer 1.2s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes detailSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeletonTitle {
+  margin-top: 20px;
+  height: 32px;
+  width: 70%;
+}
+
+.skeletonThumbnail {
+  margin-top: 20px;
+  width: 100%;
+  height: 500px;
+}
+
+.skeletonSectionTitle {
+  margin-top: 30px;
+  height: 24px;
+  width: 200px;
+}
+
+.skeletonInfoRow {
+  margin-top: 12px;
+  height: 30px;
+  width: 140px;
+}
+
+.skeletonSummaryLine {
+  margin-top: 10px;
+  height: 16px;
+  width: 100%;
+}
+
+.skeletonSummaryLineShort {
+  margin-top: 8px;
+  height: 16px;
+  width: 85%;
+}
+
+.skeletonCommentBlock {
+  margin-top: 16px;
+  height: 80px;
+  width: 100%;
+}
+
 .thumbnail {
   width: 100%;
   height: 500px;

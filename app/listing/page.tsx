@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import Searchbar from '@/components/listing/Searchbar';
 import styles from './listing.module.css';
 import type {
@@ -18,6 +19,8 @@ import Link from 'next/link';
 const TRENDING_TOPICS_LIMIT = 3;
 const RECENT_CLAIMS_LIMIT = 10;
 const FALLBACK_THUMBNAIL = '/medical_claim.png';
+const SKELETON_TREND_CARDS = 3;
+const SKELETON_CLAIM_ROWS = 4;
 
 const CATEGORY_OPTIONS: { label: string; value: string }[] = [
   { label: 'All categories', value: '' },
@@ -87,6 +90,63 @@ const INITIAL_POSTS_STATE: PostsListState = {
   totalPages: 0,
 };
 
+type ListingPageSkeletonProps = {
+  searchString: string;
+  onSearch: (query: string) => void;
+  selectedCategory: { label: string; value: string };
+  onSelectCategory: (option: { label: string; value: string }) => void;
+  categoryOptions: { label: string; value: string }[];
+};
+
+function ListingPageSkeleton({
+  searchString,
+  onSearch,
+  selectedCategory,
+  onSelectCategory,
+  categoryOptions,
+}: ListingPageSkeletonProps): ReactElement {
+  return (
+    <div
+      className={styles.container}
+      aria-busy="true"
+      aria-label="Loading listing"
+    >
+      <div className={styles.box}>
+        <div className={styles.title}>Browse Suspicious Claim</div>
+        <div className={styles.searchSection}>
+          <Searchbar text={searchString} onInput={onSearch} />
+          <CategoryFilter
+            data={categoryOptions}
+            selectedOption={selectedCategory}
+            onInput={onSelectCategory}
+            placeholder="Select category"
+          />
+        </div>
+        <span className={styles.sectionTitle}>Trending Topics</span>
+        <div className={styles.trendSection}>
+          {Array.from({ length: SKELETON_TREND_CARDS }, (_, i) => (
+            <div
+              key={i}
+              className={`${styles.skeleton} ${styles.skeletonTrendCard}`}
+              aria-hidden
+            />
+          ))}
+        </div>
+        <span className={styles.sectionTitle}>Recent Suspicious Claims</span>
+        <div className={styles.susClaimSection}>
+          {Array.from({ length: SKELETON_CLAIM_ROWS }, (_, i) => (
+            <div
+              key={i}
+              className={`${styles.skeleton} ${styles.skeletonClaimRow}`}
+              aria-hidden
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ListingPage() {
   const [searchString, setSearchString] = useState('');
   const [selectedCategory, setSelectedCategory] = useState({
@@ -95,6 +155,7 @@ export default function ListingPage() {
   });
   const [trendingTopics, setTrendingTopics] = useState<ListingTrendingTopic[]>([]);
   const [postsList, setPostsList] = useState<PostsListState>(INITIAL_POSTS_STATE);
+  const [isListingLoading, setIsListingLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +183,7 @@ export default function ListingPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setIsListingLoading(true);
     const categorySlug = selectedCategory.value.trim();
     const params = new URLSearchParams({
       page: String(postsList.page),
@@ -144,6 +206,8 @@ export default function ListingPage() {
         });
       } catch {
         if (!cancelled) setPostsList(INITIAL_POSTS_STATE);
+      } finally {
+        if (!cancelled) setIsListingLoading(false);
       }
     }
 
@@ -164,6 +228,18 @@ export default function ListingPage() {
 
   function handlePageChange(nextPage: number) {
     setPostsList((prev) => ({ ...prev, page: nextPage }));
+  }
+
+  if (isListingLoading) {
+    return (
+      <ListingPageSkeleton
+        searchString={searchString}
+        onSearch={handleSearch}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
+        categoryOptions={CATEGORY_OPTIONS}
+      />
+    );
   }
 
   return (

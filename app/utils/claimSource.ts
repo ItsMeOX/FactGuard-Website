@@ -7,7 +7,7 @@ export function getIconAndName(claimSrc: ClaimSource) {
     case ClaimSource.X:
       return { icon: '/x.png', name: 'X' };
     case ClaimSource.TIKTOK:
-      return { icon: '/tiktok.jpg', name: 'TikTok' };
+      return { icon: '/tiktok.png', name: 'TikTok' };
     case ClaimSource.INSTAGRAM:
       return { icon: '/instagram.png', name: 'Instagram' };
     case ClaimSource.REDDIT:

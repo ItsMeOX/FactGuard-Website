@@ -2,6 +2,7 @@ import { ClaimSource } from '@/types/types';
 import styles from './suspiciousclaimrow.module.css';
 import Image from 'next/image';
 import { getIconAndName } from '@/app/utils/claimSource';
+import { formatHoursAgo } from '@/app/utils/formatTime';
 
 export default function SuspiciousClaimRow({
   title,
@@ -39,7 +40,7 @@ export default function SuspiciousClaimRow({
         <span className={styles.description}>{description}</span>
         <div className={styles.metadata}>
           <span>1 hour ago</span>
-          <span>{commentCount} comments</span>
+          <span>{commentCount} comment{commentCount > 1 ? "s" : ""}</span>
         </div>
       </div>
     </div>

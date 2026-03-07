@@ -8,7 +8,12 @@ export default function PopularClaims({ data }: { data: PopularClaim[] }) {
     <div className={styles.container}>
       {data.map((d, i) => (
         <React.Fragment key={`popular-claim-${i}`}>
-          <ClaimRow title={d.title} imgUrl={d.imgUrl} posts={d.posts} />
+          <ClaimRow
+            title={d.title}
+            imgUrl={d.imgUrl}
+            posts={d.posts}
+            totalReportCount={d.totalReportCount}
+          />
           {i < data.length - 1 && <div className={styles.separator}></div>}
         </React.Fragment>
       ))}

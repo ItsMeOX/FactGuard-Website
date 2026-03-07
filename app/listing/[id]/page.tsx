@@ -12,10 +12,75 @@ import { mapPostDetailToPageData } from '@/app/utils/mapPostDetailToPageData';
 import Comment from '@/components/listingdetail/Comment';
 
 const FALLBACK_THUMBNAIL = '/medical_claim.png';
+const SKELETON_SUMMARY_LINES = 3;
+const SKELETON_COMMENT_BLOCKS = 3;
 
 function isAbsoluteUrl(url: string): boolean {
   const trimmed = url.trim();
   return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+}
+
+function DetailPageSkeleton(): React.ReactNode {
+  return (
+    <div
+      className={styles.container}
+      aria-busy="true"
+      aria-label="Loading post content"
+    >
+      <Link className={styles.backButton} href='/listing'>
+        <Image src='/back.svg' alt='' width={20} height={20} />
+        <span>back</span>
+      </Link>
+      <div
+        className={`${styles.skeleton} ${styles.skeletonTitle}`}
+        aria-hidden
+      />
+      <div
+        className={`${styles.skeleton} ${styles.skeletonThumbnail}`}
+        aria-hidden
+      />
+      <div className={styles.section}>
+        <div
+          className={`${styles.skeleton} ${styles.skeletonSectionTitle}`}
+          aria-hidden
+        />
+        <div
+          className={`${styles.skeleton} ${styles.skeletonInfoRow}`}
+          aria-hidden
+        />
+      </div>
+      <div className={styles.section}>
+        <div
+          className={`${styles.skeleton} ${styles.skeletonSectionTitle}`}
+          aria-hidden
+        />
+        {Array.from({ length: SKELETON_SUMMARY_LINES }, (_, i) => (
+          <div
+            key={i}
+            className={`${styles.skeleton} ${
+              i === SKELETON_SUMMARY_LINES - 1
+                ? styles.skeletonSummaryLineShort
+                : styles.skeletonSummaryLine
+            }`}
+            aria-hidden
+          />
+        ))}
+      </div>
+      <div className={styles.section}>
+        <div
+          className={`${styles.skeleton} ${styles.skeletonSectionTitle}`}
+          aria-hidden
+        />
+        {Array.from({ length: SKELETON_COMMENT_BLOCKS }, (_, i) => (
+          <div
+            key={i}
+            className={`${styles.skeleton} ${styles.skeletonCommentBlock}`}
+            aria-hidden
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const PLACEHOLDER_DATA: ListingDetailData = {
@@ -77,6 +142,12 @@ export default function DetailPage() {
     (error
       ? { ...PLACEHOLDER_DATA, title: error }
       : PLACEHOLDER_DATA);
+
+  const isLoading = data === null && error === null;
+
+  if (isLoading) {
+    return <DetailPageSkeleton />;
+  }
 
   const { icon: srcIcon, name: srcName } = getIconAndName(displayData.sourceType);
 

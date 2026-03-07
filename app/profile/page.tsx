@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './profile.module.css';
 import ResponseModal from '@/components/report/ResponseModal';
@@ -32,6 +33,107 @@ function formatMemberSince(isoDate: string): string {
   } catch {
     return isoDate;
   }
+}
+
+function ProfilePageSkeleton(): ReactElement {
+  return (
+    <div
+      className={styles.container}
+      aria-busy="true"
+      aria-label="Loading profile"
+    >
+      <div className={styles.form}>
+        <h1 className={styles.title}>Profile</h1>
+        <section>
+          <h2 className={styles.sectionTitle}>Account information</h2>
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Email</span>
+            <div
+              className={`${styles.skeleton} ${styles.skeletonValue}`}
+              aria-hidden
+            />
+          </div>
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Display name</span>
+            <div
+              className={`${styles.skeleton} ${styles.skeletonInput}`}
+              aria-hidden
+            />
+          </div>
+          <button type="button" className={styles.submitButton} disabled>
+            Save display name
+          </button>
+          <div className={styles.infoRow} style={{ marginTop: 16 }}>
+            <span className={styles.infoLabel}>Member since</span>
+            <div
+              className={`${styles.skeleton} ${styles.skeletonValue}`}
+              aria-hidden
+            />
+          </div>
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Reports submitted</span>
+            <div
+              className={`${styles.skeleton} ${styles.skeletonValue}`}
+              aria-hidden
+            />
+          </div>
+        </section>
+        <section>
+          <h2 className={styles.sectionTitle}>Change password</h2>
+          <div className={styles.field}>
+            <label className={styles.infoLabel} htmlFor="skeleton-current-password">
+              Current password
+            </label>
+            <div className={styles.inputWrap}>
+              <input
+                id="skeleton-current-password"
+                type="password"
+                placeholder="Current password"
+                disabled
+                aria-hidden
+              />
+            </div>
+          </div>
+          <div className={styles.field}>
+            <label className={styles.infoLabel} htmlFor="skeleton-new-password">
+              New password
+            </label>
+            <div className={styles.inputWrap}>
+              <input
+                id="skeleton-new-password"
+                type="password"
+                placeholder="At least 8 characters"
+                disabled
+                aria-hidden
+              />
+            </div>
+          </div>
+          <div className={styles.field}>
+            <label className={styles.infoLabel} htmlFor="skeleton-confirm-password">
+              Confirm new password
+            </label>
+            <div className={styles.inputWrap}>
+              <input
+                id="skeleton-confirm-password"
+                type="password"
+                placeholder="Confirm new password"
+                disabled
+                aria-hidden
+              />
+            </div>
+          </div>
+          <button type="button" className={styles.submitButton} disabled>
+            Update password
+          </button>
+        </section>
+        <section>
+          <button type="button" className={styles.logoutButton} disabled>
+            Log out
+          </button>
+        </section>
+      </div>
+    </div>
+  );
 }
 
 export default function ProfilePage() {
@@ -282,13 +384,7 @@ export default function ProfilePage() {
   }
 
   if (isLoadingProfile) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.form}>
-          <p className={styles.infoValue}>Loading profile…</p>
-        </div>
-      </div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   if (!profile) {
