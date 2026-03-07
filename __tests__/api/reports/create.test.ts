@@ -114,6 +114,19 @@ describe("POST /api/reports", () => {
     expect(data.postReportCount).toBe(3);
   });
 
+  it("returns 201 with postId when report creates a new post", async () => {
+    const resultWithPostId = { ...serviceResult, postId: "new-post-uuid-1" };
+    mockCreateReport.mockResolvedValue(resultWithPostId);
+
+    const response = await POST(makeRequest(validBody));
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.report.id).toBe("report-uuid-1");
+    expect(data.postReportCount).toBe(3);
+    expect(data.postId).toBe("new-post-uuid-1");
+  });
+
   it("returns 401 when no auth header is provided", async () => {
     mockGetAuthUser.mockRejectedValue(
       new AuthError("Missing or invalid authorization header", 401)

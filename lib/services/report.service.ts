@@ -83,6 +83,7 @@ export async function createReport(
       createdAt: report.createdAt,
     },
     postReportCount: updatedPost.reportCount,
+    ...(isNewPost && { postId: post.id }),
   };
 }
 

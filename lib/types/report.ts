@@ -9,4 +9,6 @@ export type ReportResult = {
     createdAt: Date;
   };
   postReportCount: number;
+  /** Set when a new post was created (so clients can trigger or track processing). */
+  postId?: string;
 };
