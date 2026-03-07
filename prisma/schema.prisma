@@ -31,13 +31,14 @@ model Post {
   id                  String   @id @default(uuid()) @db.Uuid
   sourceUrl           String   @map("source_url") @db.Text
   normalizedUrl       String   @unique @map("normalized_url") @db.VarChar(2048)
+  sourceType          String   @map("source_type") @db.VarChar(20)
   headline            String?  @db.VarChar(500)
   thumbnailUrl        String?  @map("thumbnail_url") @db.Text
   scrapedContent      String?  @map("scraped_content") @db.Text
   aiSummary           String?  @map("ai_summary") @db.Text
   aiCredibilityScore  Float?   @map("ai_credibility_score")
   aiTransparencyNotes String?  @map("ai_transparency_notes") @db.Text
-  scrapeStatus        String   @default("pending") @map("scrape_status") @db.VarChar(20)
+  processedStatus      String   @default("pending") @map("processed_status") @db.VarChar(20)
   reportCount         Int      @default(0) @map("report_count")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()

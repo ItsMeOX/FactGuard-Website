@@ -43,7 +43,7 @@ const mockPost = {
   id: "post-uuid-1",
   sourceUrl: "https://example.com/article",
   normalizedUrl: "https://example.com/article",
-  scrapeStatus: "pending",
+  processedStatus: "pending",
   reportCount: 0,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-01"),
@@ -135,7 +135,7 @@ describe("createReport", () => {
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
-  it("creates post with pending scrapeStatus for new URLs", async () => {
+  it("creates post with pending processedStatus and derived sourceType for new URLs", async () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
@@ -150,7 +150,8 @@ describe("createReport", () => {
       data: {
         sourceUrl: validInput.sourceUrl,
         normalizedUrl: "https://example.com/article",
-        scrapeStatus: "pending",
+        sourceType: "WEBPAGE",
+        processedStatus: "pending",
       },
     });
   });

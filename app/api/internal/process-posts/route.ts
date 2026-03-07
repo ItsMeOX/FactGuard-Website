@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
   const pendingPosts = await prisma.post.findMany({
     where: {
-      scrapeStatus: "pending",
+      processedStatus: "pending",
       createdAt: { lt: cutoff },
     },
     select: { id: true },

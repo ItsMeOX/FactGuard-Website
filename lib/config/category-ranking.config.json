@@ -1,0 +1,5 @@
+{
+  "defaultCategoryLimit": 10,
+  "maxCategoryLimit": 20,
+  "postsPerCategory": 5
+}

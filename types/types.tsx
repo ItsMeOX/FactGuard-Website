@@ -18,4 +18,7 @@ export enum ClaimSource {
   TIKTOK = 'TIKTOK',
   X = 'X',
   FACEBOOK = 'FACEBOOK',
+  INSTAGRAM = 'INSTAGRAM',
+  REDDIT = 'REDDIT',
+  WEBPAGE = 'WEBPAGE'
 }

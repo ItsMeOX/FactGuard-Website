@@ -14,3 +14,6 @@ ALTER INDEX "idx_post_categories_category_id" RENAME TO "idx_ai_post_categories_
 -- RenameForeignKey: update FK constraint names for the renamed table
 ALTER TABLE "ai_post_categories" RENAME CONSTRAINT "post_categories_post_id_fkey" TO "ai_post_categories_post_id_fkey";
 ALTER TABLE "ai_post_categories" RENAME CONSTRAINT "post_categories_category_id_fkey" TO "ai_post_categories_category_id_fkey";
+
+-- RenamePrimaryKey: moved from 20260307085302
+ALTER TABLE "ai_post_categories" RENAME CONSTRAINT "post_categories_pkey" TO "ai_post_categories_pkey";
