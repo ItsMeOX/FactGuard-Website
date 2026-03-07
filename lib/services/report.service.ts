@@ -41,7 +41,7 @@ export async function createReport(
   const [report, updatedPost] = await prisma.$transaction(async (tx) => {
     const createdReport = await tx.report.create({
       data: {
-        postId: post.id,
+        postId: post!.id,
         userId,
         headline: input.headline,
         platform: input.platform,
@@ -50,12 +50,12 @@ export async function createReport(
       },
     });
     const updated = await tx.post.update({
-      where: { id: post.id },
+      where: { id: post!.id },
       data: { reportCount: { increment: 1 } },
     });
     await tx.comment.create({
       data: {
-        postId: post.id,
+        postId: post!.id,
         userId,
         content: buildReportCommentContent({
           reportId: createdReport.id,
