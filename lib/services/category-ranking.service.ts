@@ -1,28 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import type { GetCategoryRankingInput } from "@/lib/validators/category.validator";
-import type { PostRankingItem } from "@/lib/services/post.service";
+import type {
+  CategoryRankingItem,
+  CategoryRankingResult,
+  CategoryRow,
+} from "@/lib/types/category-ranking";
 import categoryRankingConfig from "@/lib/config/category-ranking.config.json";
 
-export type CategoryRankingItem = {
-  category: {
-    id: number;
-    slug: string;
-    name: string;
-  };
-  totalReportCount: number;
-  posts: PostRankingItem[];
-};
-
-export type CategoryRankingResult = {
-  categories: CategoryRankingItem[];
-};
-
-type CategoryRow = {
-  id: number;
-  slug: string;
-  name: string;
-  total_report_count: bigint;
-};
+export type { CategoryRankingItem, CategoryRankingResult } from "@/lib/types/category-ranking";
 
 export async function getCategoryRanking(
   input: GetCategoryRankingInput

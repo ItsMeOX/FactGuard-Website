@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import type { AuthUser, AuthResult, UserProfile } from "@/lib/types/auth";
 import type {
   RegisterInput,
   LoginInput,
@@ -15,24 +16,7 @@ const JWT_SECRET = new TextEncoder().encode(
 const JWT_ISSUER = "hackomania";
 const JWT_EXPIRATION = "7d";
 
-export type AuthUser = {
-  id: string;
-  email: string;
-  displayName: string | null;
-};
-
-export type AuthResult = {
-  user: AuthUser;
-  token: string;
-};
-
-export type UserProfile = {
-  id: string;
-  email: string;
-  displayName: string | null;
-  createdAt: Date;
-  reportCount: number;
-};
+export type { AuthUser, AuthResult, UserProfile } from "@/lib/types/auth";
 
 export async function registerUser(input: RegisterInput): Promise<AuthResult> {
   const existing = await prisma.user.findUnique({

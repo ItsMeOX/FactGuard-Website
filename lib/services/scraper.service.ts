@@ -4,17 +4,9 @@ import { XScraper } from "@/lib/services/scrapers/x.scraper";
 import { FacebookScraper } from "@/lib/services/scrapers/facebook.scraper";
 import { RedditScraper } from "@/lib/services/scrapers/reddit.scraper";
 import { InstagramScraper } from "@/lib/services/scrapers/instagram.scraper";
+import type { ScrapeResult, ContentScraper } from "@/lib/types/scraper";
 
-export type ScrapeResult = {
-  title: string | null;
-  description: string | null;
-  content: string;
-  thumbnailUrl: string | null;
-};
-
-export interface ContentScraper {
-  scrape(url: string): Promise<ScrapeResult>;
-}
+export type { ScrapeResult, ContentScraper } from "@/lib/types/scraper";
 
 export function getScraperForUrl(url: string): ContentScraper {
   const hostname = new URL(url).hostname.toLowerCase();

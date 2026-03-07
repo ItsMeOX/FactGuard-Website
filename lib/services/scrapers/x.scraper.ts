@@ -1,4 +1,4 @@
-import type { ContentScraper, ScrapeResult } from "@/lib/services/scraper.service";
+import type { ContentScraper, ScrapeResult } from "@/lib/types/scraper";
 import { ScrapeError } from "@/lib/services/scraper.service";
 import scraperConfig from "@/lib/config/scraper.config.json";
 

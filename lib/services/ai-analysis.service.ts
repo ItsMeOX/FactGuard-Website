@@ -1,19 +1,8 @@
 import OpenAI from "openai";
 import aiConfig from "@/lib/config/ai-analysis.config.json";
+import type { AnalysisInput, AnalysisResult } from "@/lib/types/ai-analysis";
 
-export type AnalysisInput = {
-  sourceUrl: string;
-  userReports: { headline: string; reportDescription: string }[];
-  categorySlugs: string[];
-};
-
-export type AnalysisResult = {
-  aiSummary: string;
-  aiCredibilityScore: number;
-  aiTransparencyNotes: string;
-  categories: { slug: string; confidence: number }[];
-  suggestedThumbnailUrl: string | null;
-};
+export type { AnalysisInput, AnalysisResult } from "@/lib/types/ai-analysis";
 
 let client: OpenAI | null = null;
 

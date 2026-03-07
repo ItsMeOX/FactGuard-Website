@@ -1,5 +1,5 @@
+import type { AuthUser } from "@/lib/types/auth";
 import { verifyToken, AuthError } from "@/lib/services/auth.service";
-import type { AuthUser } from "@/lib/services/auth.service";
 
 export async function getAuthUser(request: Request): Promise<AuthUser> {
   const header = request.headers.get("authorization");

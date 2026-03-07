@@ -1,12 +1,8 @@
 import { tavily } from "@tavily/core";
 import searchConfig from "@/lib/config/search.config.json";
+import type { SearchResult } from "@/lib/types/search";
 
-export type SearchResult = {
-  title: string;
-  url: string;
-  content: string;
-  score: number;
-};
+export type { SearchResult } from "@/lib/types/search";
 
 let client: ReturnType<typeof tavily> | null = null;
 
