@@ -1,15 +1,18 @@
 import styles from './comment.module.css';
+import type { ChatMessage } from '@/types/types';
 
 export default function Comment({
   username,
   comment,
   userDesc,
   supportEvidence,
+  messages,
 }: {
   username: string;
   comment: string;
   userDesc: string;
   supportEvidence: string;
+  messages?: ChatMessage[];
 }) {
   return (
     <div className={styles.container}>
@@ -39,6 +42,21 @@ export default function Comment({
             <div className={styles.row}>
               <span className={styles.label}>Supporting Evidence:</span>
               <span className={styles.comment}>{supportEvidence}</span>
+            </div>
+          )}
+
+          {messages != null && messages.length > 0 && (
+            <div className={styles.row}>
+              <span className={styles.label}>Messages:</span>
+              <span className={styles.comment}>
+                {messages.map((msg, i) => (
+                  <span key={i}>
+                    {i > 0 && <br />}
+                    <strong>{msg.sender}:</strong> {msg.text}
+                    {msg.timestamp != null ? ` (${msg.timestamp})` : ''}
+                  </span>
+                ))}
+              </span>
             </div>
           )}
         </div>

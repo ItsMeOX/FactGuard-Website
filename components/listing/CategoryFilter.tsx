@@ -56,7 +56,7 @@ export default function CategoryFilter({
                 key={`dropdown-${option.label}`}
                 onClick={() => handleSelectOption(option)}
                 className={`${styles.dropdownOption} ${
-                  selectedOption === option ? styles.selected : ''
+                  selectedOption?.value === option.value ? styles.selected : ''
                 }`}
               >
                 {option.label}
