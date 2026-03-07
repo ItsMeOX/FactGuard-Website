@@ -45,6 +45,25 @@
   background-color: #2346e3;
 }
 
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.modalLink {
+  color: #0088ff;
+  font-weight: 600;
+}
+
+.modalLink:hover {
+  text-decoration: underline;
+}
+
+.detailText {
+  font-size: 13px;
+  word-break: break-word;
+}
+
 .submitSection input {
   color: #989898;
 }

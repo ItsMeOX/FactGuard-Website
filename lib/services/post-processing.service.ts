@@ -20,14 +20,13 @@ export async function processPost(postId: string): Promise<void> {
     });
 
     const categories = await prisma.category.findMany({
-      select: { slug: true },
+      select: { name: true, slug: true, description: true },
     });
-    const categorySlugs = categories.map((c) => c.slug);
 
     const analysis = await analyzePost({
       sourceUrl: post.sourceUrl,
       userReports: reports,
-      categorySlugs,
+      categories,
     });
 
     const updateData: {
@@ -47,8 +46,14 @@ export async function processPost(postId: string): Promise<void> {
     if (analysis.suggestedThumbnailUrl != null) {
       updateData.thumbnailUrl = analysis.suggestedThumbnailUrl;
     }
-    if (post.headline == null && reports.length > 0) {
-      updateData.headline = reports[0].headline;
+    // Set headline only when the post has none yet (first report). Later reports must not overwrite it.
+    const postHasNoHeadline = post.headline == null || post.headline.trim() === "";
+    if (postHasNoHeadline) {
+      if (analysis.aiHeadline) {
+        updateData.headline = analysis.aiHeadline;
+      } else if (reports.length > 0) {
+        updateData.headline = reports[0].headline;
+      }
     }
 
     await prisma.post.update({
@@ -56,29 +61,29 @@ export async function processPost(postId: string): Promise<void> {
       data: updateData,
     });
 
+    // Exactly one category per post: replace any existing AI category assignment
     if (analysis.categories.length > 0) {
-      const categoryMap = await prisma.category.findMany({
-        where: { slug: { in: analysis.categories.map((c) => c.slug) } },
-        select: { id: true, slug: true },
+      const single = analysis.categories[0];
+      const categoryRow = await prisma.category.findUnique({
+        where: { slug: single.slug },
+        select: { id: true },
       });
-      const slugToId = new Map(categoryMap.map((c) => [c.slug, c.id]));
-
-      for (const cat of analysis.categories) {
-        const categoryId = slugToId.get(cat.slug);
-        if (!categoryId) continue;
-
+      if (categoryRow) {
+        await prisma.aiPostCategory.deleteMany({ where: { postId } });
         await prisma.aiPostCategory.upsert({
           where: {
-            postId_categoryId: { postId, categoryId },
+            postId_categoryId: { postId, categoryId: categoryRow.id },
           },
-          update: { confidence: cat.confidence },
+          update: { confidence: single.confidence },
           create: {
             postId,
-            categoryId,
-            confidence: cat.confidence,
+            categoryId: categoryRow.id,
+            confidence: single.confidence,
           },
         });
       }
+    } else {
+      await prisma.aiPostCategory.deleteMany({ where: { postId } });
     }
   } catch (error) {
     console.error(`processPost failed for ${postId}:`, error);

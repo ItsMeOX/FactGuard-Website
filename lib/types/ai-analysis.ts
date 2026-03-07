@@ -1,10 +1,12 @@
 export type AnalysisInput = {
   sourceUrl: string;
   userReports: { headline: string; reportDescription: string }[];
-  categorySlugs: string[];
+  /** Full category list so the AI can choose the single best fit. */
+  categories: { name: string; slug: string; description: string | null }[];
 };
 
 export type AnalysisResult = {
+  aiHeadline: string;
   aiSummary: string;
   aiCredibilityScore: number;
   aiTransparencyNotes: string;

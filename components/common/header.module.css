@@ -37,6 +37,23 @@
   margin-inline: 30px;
 }
 
+.authLinks {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.loginLink {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
+
 .button {
   background-color: #3c5ae1;
   color: white;
@@ -51,4 +68,19 @@
 
 .button a {
   color: white;
+}
+
+.profileLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  color: #3c3d5e;
+  border-radius: 8px;
+}
+
+.profileLink:hover {
+  background-color: #e5e7eb;
+  color: #3c5ae1;
 }

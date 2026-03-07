@@ -26,10 +26,14 @@ const validInput: AnalysisInput = {
       reportDescription: "This article makes false claims about vaccines.",
     },
   ],
-  categorySlugs: ["health-medicine", "social-media-viral"],
+  categories: [
+    { name: "Health & Medicine", slug: "health-medicine", description: "Health and medical claims" },
+    { name: "Social Media & Viral", slug: "social-media-viral", description: "Viral and social media content" },
+  ],
 };
 
 const validAiResponse = {
+  aiHeadline: "Article makes unsubstantiated vaccine safety claims.",
   aiSummary: "The article makes unsubstantiated claims about vaccine safety.",
   aiCredibilityScore: 15,
   aiTransparencyNotes: "Assessment based on URL and user reports only; no page content or external fact-checks were available.",
@@ -53,16 +57,18 @@ function mockOpenAiResponse(content: object | string) {
 }
 
 describe("analyzePost", () => {
-  it("returns parsed analysis with summary, score, notes, categories, and suggestedThumbnailUrl", async () => {
+  it("returns parsed analysis with summary, score, notes, exactly one category, aiHeadline, and suggestedThumbnailUrl", async () => {
     mockOpenAiResponse(validAiResponse);
 
     const result = await analyzePost(validInput);
 
+    expect(result.aiHeadline).toBe(validAiResponse.aiHeadline);
     expect(result.aiSummary).toBe(validAiResponse.aiSummary);
     expect(result.aiCredibilityScore).toBe(15);
     expect(result.aiTransparencyNotes).toBe(validAiResponse.aiTransparencyNotes);
-    expect(result.categories).toHaveLength(2);
+    expect(result.categories).toHaveLength(1);
     expect(result.categories[0].slug).toBe("health-medicine");
+    expect(result.categories[0].confidence).toBe(0.92);
     expect(result.suggestedThumbnailUrl).toBe("https://example.com/og-image.jpg");
   });
 
@@ -111,7 +117,7 @@ describe("analyzePost", () => {
     expect(userMessage.content).toContain("Misleading vaccine claim");
   });
 
-  it("includes category slugs in the system prompt", async () => {
+  it("includes category list (name, slug, description) in the system prompt", async () => {
     mockOpenAiResponse(validAiResponse);
 
     await analyzePost(validInput);
@@ -120,6 +126,8 @@ describe("analyzePost", () => {
     const systemMessage = messages.find((m: { role: string }) => m.role === "system");
     expect(systemMessage.content).toContain("health-medicine");
     expect(systemMessage.content).toContain("social-media-viral");
+    expect(systemMessage.content).toContain("Health & Medicine");
+    expect(systemMessage.content).toContain("exactly one category");
   });
 
   it("parses and returns suggestedThumbnailUrl when valid URL", async () => {
@@ -162,7 +170,23 @@ describe("analyzePost", () => {
     expect(result.aiCredibilityScore).toBe(50);
   });
 
-  it("filters out categories with confidence <= 0.5", async () => {
+  it("returns exactly one category (highest confidence when multiple returned)", async () => {
+    mockOpenAiResponse({
+      ...validAiResponse,
+      categories: [
+        { slug: "health-medicine", confidence: 0.92 },
+        { slug: "social-media-viral", confidence: 0.65 },
+      ],
+    });
+
+    const result = await analyzePost(validInput);
+
+    expect(result.categories).toHaveLength(1);
+    expect(result.categories[0].slug).toBe("health-medicine");
+    expect(result.categories[0].confidence).toBe(0.92);
+  });
+
+  it("returns one category when all confidences are below minConfidence (picks highest)", async () => {
     mockOpenAiResponse({
       ...validAiResponse,
       categories: [
@@ -183,6 +207,24 @@ describe("analyzePost", () => {
     const result = await analyzePost(validInput);
 
     expect(result.categories).toEqual([]);
+  });
+
+  it("returns empty string for missing or invalid aiHeadline", async () => {
+    mockOpenAiResponse({ ...validAiResponse, aiHeadline: null });
+
+    const result = await analyzePost(validInput);
+
+    expect(result.aiHeadline).toBe("");
+  });
+
+  it("trims and truncates aiHeadline to max length", async () => {
+    const long = "a".repeat(400);
+    mockOpenAiResponse({ ...validAiResponse, aiHeadline: long });
+
+    const result = await analyzePost(validInput);
+
+    expect(result.aiHeadline.length).toBe(300);
+    expect(result.aiHeadline).toBe("a".repeat(300));
   });
 
   it("throws AnalysisError for empty OpenAI response", async () => {

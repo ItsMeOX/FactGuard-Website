@@ -9,9 +9,11 @@ jest.mock("@/lib/prisma", () => ({
     },
     category: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
     aiPostCategory: {
       upsert: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }));
@@ -28,7 +30,9 @@ const mockPostFindUnique = prisma.post.findUnique as jest.Mock;
 const mockPostUpdate = prisma.post.update as jest.Mock;
 const mockReportFindMany = prisma.report.findMany as jest.Mock;
 const mockCategoryFindMany = prisma.category.findMany as jest.Mock;
+const mockCategoryFindUnique = prisma.category.findUnique as jest.Mock;
 const mockAiPostCategoryUpsert = prisma.aiPostCategory.upsert as jest.Mock;
+const mockAiPostCategoryDeleteMany = prisma.aiPostCategory.deleteMany as jest.Mock;
 const mockAnalyzePost = analyzePost as jest.Mock;
 
 const mockPost = {
@@ -45,6 +49,7 @@ const mockPost = {
 };
 
 const mockAnalysisResult = {
+  aiHeadline: "Fact-check: Article contains false information about vaccines.",
   aiSummary: "The claim is misleading based on available evidence.",
   aiCredibilityScore: 25,
   aiTransparencyNotes: "Assessment based on URL and user reports only.",
@@ -60,8 +65,8 @@ const mockReports = [
 ];
 
 const mockCategories = [
-  { id: 1, slug: "health-medicine" },
-  { id: 2, slug: "politics-government" },
+  { name: "Health & Medicine", slug: "health-medicine", description: "Health and medical claims" },
+  { name: "Politics & Government", slug: "politics-government", description: "Political and government topics" },
 ];
 
 beforeEach(() => {
@@ -73,8 +78,10 @@ beforeEach(() => {
   mockPostUpdate.mockResolvedValue(mockPost);
   mockReportFindMany.mockResolvedValue(mockReports);
   mockCategoryFindMany.mockResolvedValue(mockCategories);
+  mockCategoryFindUnique.mockResolvedValue({ id: 1 });
   mockAnalyzePost.mockResolvedValue(mockAnalysisResult);
   mockAiPostCategoryUpsert.mockResolvedValue({});
+  mockAiPostCategoryDeleteMany.mockResolvedValue({ count: 0 });
 });
 
 afterEach(() => {
@@ -102,13 +109,13 @@ describe("processPost", () => {
     });
   });
 
-  it("passes source URL, user reports, and category slugs to AI analysis", async () => {
+  it("passes source URL, user reports, and full categories to AI analysis", async () => {
     await processPost("post-uuid-1");
 
     expect(mockAnalyzePost).toHaveBeenCalledWith({
       sourceUrl: "https://example.com/article",
       userReports: mockReports,
-      categorySlugs: ["health-medicine", "politics-government"],
+      categories: mockCategories,
     });
   });
 
@@ -144,7 +151,22 @@ describe("processPost", () => {
     );
   });
 
-  it("sets headline from first report when post has no headline", async () => {
+  it("saves AI-generated headline to post (preferred over user report)", async () => {
+    await processPost("post-uuid-1");
+
+    const completedUpdate = mockPostUpdate.mock.calls.find(
+      (call) => call[0].data.processedStatus === "completed"
+    );
+    expect(completedUpdate).toBeDefined();
+    expect(completedUpdate![0].data.headline).toBe(mockAnalysisResult.aiHeadline);
+  });
+
+  it("falls back to first report headline when AI headline is empty", async () => {
+    mockAnalyzePost.mockResolvedValue({
+      ...mockAnalysisResult,
+      aiHeadline: "",
+    });
+
     await processPost("post-uuid-1");
 
     const completedUpdate = mockPostUpdate.mock.calls.find(
@@ -154,13 +176,39 @@ describe("processPost", () => {
     expect(completedUpdate![0].data.headline).toBe("Misleading claim");
   });
 
-  it("upserts AI post categories", async () => {
-    mockCategoryFindMany
-      .mockResolvedValueOnce(mockCategories)
-      .mockResolvedValueOnce([{ id: 1, slug: "health-medicine" }]);
+  it("does not overwrite headline when post already has one (e.g. second report)", async () => {
+    const existingHeadline = "Original AI-generated headline from first report.";
+    mockPostFindUnique.mockResolvedValue({
+      ...mockPost,
+      headline: existingHeadline,
+    });
+    mockAnalyzePost.mockResolvedValue({
+      ...mockAnalysisResult,
+      aiHeadline: "Different headline from second processing.",
+    });
 
     await processPost("post-uuid-1");
 
+    const completedUpdate = mockPostUpdate.mock.calls.find(
+      (call) => call[0].data.processedStatus === "completed"
+    );
+    expect(completedUpdate).toBeDefined();
+    expect(completedUpdate![0].data.headline).toBeUndefined();
+    expect(completedUpdate![0].data).not.toHaveProperty("headline");
+  });
+
+  it("deletes existing AI categories then upserts the single assigned category", async () => {
+    mockCategoryFindUnique.mockResolvedValue({ id: 1 });
+
+    await processPost("post-uuid-1");
+
+    expect(mockAiPostCategoryDeleteMany).toHaveBeenCalledWith({
+      where: { postId: "post-uuid-1" },
+    });
+    expect(mockCategoryFindUnique).toHaveBeenCalledWith({
+      where: { slug: "health-medicine" },
+      select: { id: true },
+    });
     expect(mockAiPostCategoryUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
