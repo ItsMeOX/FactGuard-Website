@@ -92,7 +92,7 @@ describe("POST /api/internal/process-posts", () => {
     expect(mockPostFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          scrapeStatus: "pending",
+          processedStatus: "pending",
           createdAt: { lt: expect.any(Date) },
         },
         select: { id: true },

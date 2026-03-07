@@ -34,7 +34,7 @@ export async function createReport(
         sourceUrl: input.sourceUrl,
         normalizedUrl: normalized,
         sourceType: getSourceType(input.sourceUrl),
-        scrapeStatus: "pending",
+        processedStatus: "pending",
       },
     });
     isNewPost = true;

@@ -1,11 +1,8 @@
 import OpenAI from "openai";
-import type { SearchResult } from "@/lib/services/search.service";
 import aiConfig from "@/lib/config/ai-analysis.config.json";
 
 export type AnalysisInput = {
   sourceUrl: string;
-  scrapedContent: string | null;
-  searchResults: SearchResult[];
   userReports: { headline: string; reportDescription: string }[];
   categorySlugs: string[];
 };
@@ -15,6 +12,7 @@ export type AnalysisResult = {
   aiCredibilityScore: number;
   aiTransparencyNotes: string;
   categories: { slug: string; confidence: number }[];
+  suggestedThumbnailUrl: string | null;
 };
 
 let client: OpenAI | null = null;
@@ -70,25 +68,9 @@ function buildUserPrompt(input: AnalysisInput): string {
   const sections: string[] = [];
 
   sections.push(`Source URL: ${input.sourceUrl}`);
-
-  if (input.scrapedContent) {
-    const trimmed = input.scrapedContent.slice(
-      0,
-      aiConfig.userPrompt.maxScrapedContentLength
-    );
-    sections.push(`\nScraped Content:\n${trimmed}`);
-  } else {
-    sections.push("\nScraped Content: [Unable to scrape - content unavailable]");
-  }
-
-  if (input.searchResults.length > 0) {
-    const searchSection = input.searchResults
-      .map((r) => `- ${r.title} (${r.url}): ${r.content}`)
-      .join("\n");
-    sections.push(`\nWeb Search Results:\n${searchSection}`);
-  } else {
-    sections.push("\nWeb Search Results: [No results found]");
-  }
+  sections.push(
+    "\nNo scraped page content or web search results were provided. Base your assessment solely on the source URL and the user reports below."
+  );
 
   if (input.userReports.length > 0) {
     const reportsSection = input.userReports
@@ -98,6 +80,16 @@ function buildUserPrompt(input: AnalysisInput): string {
   }
 
   return sections.join("\n");
+}
+
+function isValidUrl(value: unknown): boolean {
+  if (typeof value !== "string" || value.trim() === "") return false;
+  try {
+    new URL(value.trim());
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function parseAnalysisResponse(content: string): AnalysisResult {
@@ -130,7 +122,20 @@ function parseAnalysisResponse(content: string): AnalysisResult {
     }
   }
 
-  return { aiSummary, aiCredibilityScore, aiTransparencyNotes, categories };
+  let suggestedThumbnailUrl: string | null = null;
+  if (parsed.suggestedThumbnailUrl != null) {
+    if (typeof parsed.suggestedThumbnailUrl === "string" && isValidUrl(parsed.suggestedThumbnailUrl)) {
+      suggestedThumbnailUrl = parsed.suggestedThumbnailUrl.trim();
+    }
+  }
+
+  return {
+    aiSummary,
+    aiCredibilityScore,
+    aiTransparencyNotes,
+    categories,
+    suggestedThumbnailUrl,
+  };
 }
 
 export class AnalysisError extends Error {

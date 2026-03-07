@@ -38,7 +38,7 @@ model Post {
   aiSummary           String?  @map("ai_summary") @db.Text
   aiCredibilityScore  Float?   @map("ai_credibility_score")
   aiTransparencyNotes String?  @map("ai_transparency_notes") @db.Text
-  scrapeStatus        String   @default("pending") @map("scrape_status") @db.VarChar(20)
+  processedStatus      String   @default("pending") @map("processed_status") @db.VarChar(20)
   reportCount         Int      @default(0) @map("report_count")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()

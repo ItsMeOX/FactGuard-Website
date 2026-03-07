@@ -20,15 +20,6 @@ afterEach(() => {
 
 const validInput: AnalysisInput = {
   sourceUrl: "https://example.com/article",
-  scrapedContent: "Article claims that vaccines are harmful to children.",
-  searchResults: [
-    {
-      title: "CDC Vaccine Safety",
-      url: "https://cdc.gov/vaccines",
-      content: "Vaccines are safe and effective according to CDC data.",
-      score: 0.95,
-    },
-  ],
   userReports: [
     {
       headline: "Misleading vaccine claim",
@@ -39,13 +30,14 @@ const validInput: AnalysisInput = {
 };
 
 const validAiResponse = {
-  aiSummary: "The article makes unsubstantiated claims about vaccine safety that contradict CDC data.",
+  aiSummary: "The article makes unsubstantiated claims about vaccine safety.",
   aiCredibilityScore: 15,
-  aiTransparencyNotes: "Cross-referenced with CDC data and WHO reports. The claims lack scientific evidence.",
+  aiTransparencyNotes: "Assessment based on URL and user reports only; no page content or external fact-checks were available.",
   categories: [
     { slug: "health-medicine", confidence: 0.92 },
     { slug: "social-media-viral", confidence: 0.65 },
   ],
+  suggestedThumbnailUrl: "https://example.com/og-image.jpg",
 };
 
 function mockOpenAiResponse(content: object | string) {
@@ -61,7 +53,7 @@ function mockOpenAiResponse(content: object | string) {
 }
 
 describe("analyzePost", () => {
-  it("returns parsed analysis with summary, score, notes, and categories", async () => {
+  it("returns parsed analysis with summary, score, notes, categories, and suggestedThumbnailUrl", async () => {
     mockOpenAiResponse(validAiResponse);
 
     const result = await analyzePost(validInput);
@@ -71,6 +63,7 @@ describe("analyzePost", () => {
     expect(result.aiTransparencyNotes).toBe(validAiResponse.aiTransparencyNotes);
     expect(result.categories).toHaveLength(2);
     expect(result.categories[0].slug).toBe("health-medicine");
+    expect(result.suggestedThumbnailUrl).toBe("https://example.com/og-image.jpg");
   });
 
   it("calls OpenAI with json_object response format", async () => {
@@ -97,24 +90,15 @@ describe("analyzePost", () => {
     expect(userMessage.content).toContain("https://example.com/article");
   });
 
-  it("includes scraped content in the user prompt", async () => {
+  it("states that no scraped content or web search was provided", async () => {
     mockOpenAiResponse(validAiResponse);
 
     await analyzePost(validInput);
 
     const messages = mockCreate.mock.calls[0][0].messages;
     const userMessage = messages.find((m: { role: string }) => m.role === "user");
-    expect(userMessage.content).toContain("vaccines are harmful");
-  });
-
-  it("includes search results in the user prompt", async () => {
-    mockOpenAiResponse(validAiResponse);
-
-    await analyzePost(validInput);
-
-    const messages = mockCreate.mock.calls[0][0].messages;
-    const userMessage = messages.find((m: { role: string }) => m.role === "user");
-    expect(userMessage.content).toContain("CDC Vaccine Safety");
+    expect(userMessage.content).toContain("No scraped page content or web search results were provided");
+    expect(userMessage.content).toContain("Base your assessment solely on the source URL and the user reports");
   });
 
   it("includes user reports in the user prompt", async () => {
@@ -138,24 +122,28 @@ describe("analyzePost", () => {
     expect(systemMessage.content).toContain("social-media-viral");
   });
 
-  it("handles null scraped content gracefully", async () => {
+  it("parses and returns suggestedThumbnailUrl when valid URL", async () => {
     mockOpenAiResponse(validAiResponse);
 
-    await analyzePost({ ...validInput, scrapedContent: null });
+    const result = await analyzePost(validInput);
 
-    const messages = mockCreate.mock.calls[0][0].messages;
-    const userMessage = messages.find((m: { role: string }) => m.role === "user");
-    expect(userMessage.content).toContain("content unavailable");
+    expect(result.suggestedThumbnailUrl).toBe("https://example.com/og-image.jpg");
   });
 
-  it("handles empty search results gracefully", async () => {
-    mockOpenAiResponse(validAiResponse);
+  it("returns null for suggestedThumbnailUrl when AI returns null", async () => {
+    mockOpenAiResponse({ ...validAiResponse, suggestedThumbnailUrl: null });
 
-    await analyzePost({ ...validInput, searchResults: [] });
+    const result = await analyzePost(validInput);
 
-    const messages = mockCreate.mock.calls[0][0].messages;
-    const userMessage = messages.find((m: { role: string }) => m.role === "user");
-    expect(userMessage.content).toContain("No results found");
+    expect(result.suggestedThumbnailUrl).toBeNull();
+  });
+
+  it("returns null for suggestedThumbnailUrl when invalid or missing", async () => {
+    mockOpenAiResponse({ ...validAiResponse, suggestedThumbnailUrl: "not-a-valid-url" });
+
+    const result = await analyzePost(validInput);
+
+    expect(result.suggestedThumbnailUrl).toBeNull();
   });
 
   it("clamps credibility score to 0-100 range", async () => {
