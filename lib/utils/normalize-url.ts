@@ -1,22 +1,6 @@
-const TRACKING_PARAMS = new Set([
-  "utm_source",
-  "utm_medium",
-  "utm_campaign",
-  "utm_term",
-  "utm_content",
-  "fbclid",
-  "gclid",
-  "gclsrc",
-  "dclid",
-  "msclkid",
-  "twclid",
-  "igshid",
-  "mc_cid",
-  "mc_eid",
-  "ref",
-  "ref_src",
-  "ref_url",
-]);
+import normalizeUrlConfig from "@/lib/config/normalize-url.config.json";
+
+const TRACKING_PARAMS = new Set(normalizeUrlConfig.trackingParams);
 
 export function normalizeUrl(raw: string): string {
   const url = new URL(raw);

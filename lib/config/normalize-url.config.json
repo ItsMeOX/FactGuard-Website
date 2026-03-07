@@ -1,0 +1,21 @@
+{
+  "trackingParams": [
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_term",
+    "utm_content",
+    "fbclid",
+    "gclid",
+    "gclsrc",
+    "dclid",
+    "msclkid",
+    "twclid",
+    "igshid",
+    "mc_cid",
+    "mc_eid",
+    "ref",
+    "ref_src",
+    "ref_url"
+  ]
+}

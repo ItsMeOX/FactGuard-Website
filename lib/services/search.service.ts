@@ -1,6 +1,5 @@
 import { tavily } from "@tavily/core";
-
-const MAX_RESULTS = 5;
+import searchConfig from "@/lib/config/search.config.json";
 
 export type SearchResult = {
   title: string;
@@ -28,9 +27,9 @@ export async function searchForContext(
   const tavilyClient = getClient();
 
   const response = await tavilyClient.search(query, {
-    searchDepth: "basic",
-    maxResults: MAX_RESULTS,
-    topic: "news",
+    searchDepth: searchConfig.searchDepth as "basic" | "advanced",
+    maxResults: searchConfig.maxResults,
+    topic: searchConfig.topic as "general" | "news",
   });
 
   return response.results.map((r) => ({
@@ -46,7 +45,7 @@ export function buildSearchQuery(
   sourceUrl: string
 ): string {
   const base = headline || sourceUrl;
-  return `fact check: ${base}`;
+  return `${searchConfig.queryPrefix} ${base}`;
 }
 
 export class SearchError extends Error {
