@@ -73,6 +73,43 @@ describe("GET /api/posts", () => {
     );
   });
 
+  it("passes undefined category and returns all posts with pagination when no category query param is provided", async () => {
+    mockGetPostRanking.mockResolvedValue({
+      posts: [
+        {
+          id: "post-uuid-1",
+          headline: "First by reports",
+          sourceType: "WEBPAGE",
+          thumbnailUrl: null,
+          reportCount: 15,
+          latestReportAt: new Date("2026-03-05T12:00:00Z"),
+        },
+        {
+          id: "post-uuid-2",
+          headline: "Second by reports",
+          sourceType: "WEBPAGE",
+          thumbnailUrl: null,
+          reportCount: 8,
+          latestReportAt: new Date("2026-03-04T10:00:00Z"),
+        },
+      ],
+      totalCount: 50,
+      page: 1,
+      totalPages: 5,
+    });
+
+    const response = await GET(makeGetRequest());
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.posts).toHaveLength(2);
+    expect(data.totalCount).toBe(50);
+    expect(data.page).toBe(1);
+    expect(data.totalPages).toBe(5);
+    expect(mockGetPostRanking).toHaveBeenCalledTimes(1);
+    expect(mockGetPostRanking.mock.calls[0][0].category).toBeUndefined();
+  });
+
   it("passes limit and page params to service", async () => {
     mockGetPostRanking.mockResolvedValue({
       posts: [],
