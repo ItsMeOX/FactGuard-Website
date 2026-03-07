@@ -1,202 +1,169 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Searchbar from '@/components/listing/Searchbar';
 import styles from './listing.module.css';
-import { Categories, ClaimSource, Post } from '@/types/types';
+import type {
+  CategoryRankingApiResponse,
+  ListingTrendingTopic,
+  PostRankingApiResponse,
+} from '@/types/types';
+import { ClaimSource } from '@/types/types';
 import TrendingTopicCom from '@/components/listing/TrendingTopic';
-import { useState } from 'react';
 import SuspiciousClaimRow from '@/components/listing/SuspiciousClaimRow';
 import CategoryFilter from '@/components/listing/CategoryFilter';
+import { mapSourceTypeToClaimSource } from '@/app/utils/mapSourceType';
+import Link from 'next/link';
 
-const trendingTopicData: Categories[] = [
-  {
-    category: {
-      id: 1,
-      name: 'International Affairs',
-      slug: 'international-affairs',
-    },
-    totalPostCount: 105,
-    posts: [
-      {
-        id: 1,
-        title:
-          'Video shows an Iranian fighter jet destroying a U.S. warship during the Iran war',
-        sourceType: ClaimSource.FACEBOOK,
-        sourceUrl: '.',
-        imgUrl: '/ai_war.png',
-        time: new Date(),
-        aiSummary: '',
-        credibility: '',
-        transparency: '',
-        score: 0,
-        comments: [],
-      },
-    ],
-  },
-  {
-    category: { id: 2, name: 'Health & Medicine', slug: 'health-medicine' },
-    totalPostCount: 32,
-    posts: [
-      {
-        id: 3,
-        title:
-          'Video shows an Iranian fighter jet destroying a U.S. warship during the Iran war',
-        sourceType: ClaimSource.FACEBOOK,
-        sourceUrl: '.',
-        imgUrl: '/medical_claim.png',
-        time: new Date(),
-        aiSummary: '',
-        credibility: '',
-        transparency: '',
-        score: 0,
-        comments: [],
-      },
-    ],
-  },
-  {
-    category: {
-      id: 3,
-      name: 'Politics & Government',
-      slug: 'politics-government',
-    },
-    totalPostCount: 21,
-    posts: [
-      {
-        id: 1,
-        title:
-          'Video shows an Iranian fighter jet destroying a U.S. warship during the Iran war',
-        sourceType: ClaimSource.FACEBOOK,
-        sourceUrl: '.',
-        imgUrl: '/us_iran_war.png',
-        time: new Date(),
-        aiSummary: '',
-        credibility: '',
-        transparency: '',
-        score: 0,
-        comments: [],
-      },
-      {
-        id: 2,
-        title:
-          'Video shows an Iranian fighter jet destroying a U.S. warship during the Iran war',
-        sourceType: ClaimSource.FACEBOOK,
-        sourceUrl: '.',
-        imgUrl: '/medical_claim.png',
-        time: new Date(),
-        aiSummary: '',
-        credibility: '',
-        transparency: '',
-        score: 0,
-        comments: [],
-      },
-      {
-        id: 3,
-        title:
-          'Video shows an Iranian fighter jet destroying a U.S. warship during the Iran war',
-        sourceType: ClaimSource.FACEBOOK,
-        sourceUrl: '.',
-        imgUrl: '/medical_claim.png',
-        time: new Date(),
-        aiSummary: '',
-        credibility: '',
-        transparency: '',
-        score: 0,
-        comments: [],
-      },
-    ],
-  },
+const TRENDING_TOPICS_LIMIT = 3;
+const RECENT_CLAIMS_LIMIT = 10;
+const FALLBACK_THUMBNAIL = '/medical_claim.png';
+
+const CATEGORY_OPTIONS: { label: string; value: string }[] = [
+  { label: 'All categories', value: '' },
+  { label: 'Health & Medicine', value: 'health-medicine' },
+  { label: 'Politics & Government', value: 'politics-government' },
+  { label: 'Science & Technology', value: 'science-technology' },
+  { label: 'Environment & Climate', value: 'environment-climate' },
+  { label: 'Finance & Economy', value: 'finance-economy' },
+  { label: 'Social Media & Viral', value: 'social-media-viral' },
+  { label: 'Education', value: 'education' },
+  { label: 'Entertainment', value: 'entertainment' },
+  { label: 'International Affairs', value: 'international-affairs' },
+  { label: 'Consumer & Product', value: 'consumer-product' },
 ];
 
-const susClaimData: Post[] = [
-  {
-    id: 1,
-    title:
-      'Video shows an Iranian fighter jet destroying a U.S. warship during the Iran war',
-    sourceType: ClaimSource.FACEBOOK,
-    sourceUrl: '.',
-    imgUrl: '/ai_war.png',
-    time: new Date(),
-    aiSummary:
-      'This headline is suspicious because it makes a major military claim without citing any credible sources or official reports. In similar viral posts, videos claiming to show Iranian jets attacking U.S. ships were later found to be footage from military simulation video games rather than real combat. Additionally, some clips used in these claims show outdated WWII-era ships and aircraft, which would not ...',
-    credibility: '',
-    transparency: '',
-    score: 0,
-    comments: [
-      {
-        user: { id: 1, name: 'Trisan' },
-        comment: 'my comment!',
-        supportingEvidence: null,
-        userDescription: null,
+function mapCategoryRankingToTrendingTopics(
+  data: CategoryRankingApiResponse
+): ListingTrendingTopic[] {
+  return data.categories.map((row) => {
+    const firstPost = row.posts[0];
+    const imgUrl = firstPost?.thumbnailUrl ?? FALLBACK_THUMBNAIL;
+    return {
+      category: {
+        id: row.category.id,
+        name: row.category.name,
+        slug: row.category.slug,
       },
-      {
-        user: { id: 1, name: 'Trisan' },
-        comment: null,
-        supportingEvidence: 'my evidence',
-        userDescription: 'my user description',
-      },
-      {
-        user: { id: 1, name: 'Trisan' },
-        comment: 'my comment!',
-        supportingEvidence: null,
-        userDescription: 'my sole user description',
-      },
-    ],
-  },
-  {
-    id: 2,
-    title:
-      'BREAKING: Iran Launches Secret Missile Strike on U.S. Base – Media Ordered Not to Report',
-    sourceType: ClaimSource.X,
-    sourceUrl: '.',
-    imgUrl: '/ai_war.png',
-    time: new Date(),
-    aiSummary:
-      'This headline is suspicious because it makes a major military claim without citing any credible sources or official reports. In similar viral posts, videos claiming to show Iranian jets attacking U.S. ships were later found to be footage from military simulation video games rather than real combat. Additionally, some clips used in these claims show outdated WWII-era ships and aircraft, which would not ...',
-    credibility: '',
-    transparency: '',
-    score: 0,
-    comments: [
-      {
-        user: { id: 1, name: 'Trisan' },
-        comment: 'my comment!',
-        supportingEvidence: null,
-        userDescription: null,
-      },
-      {
-        user: { id: 1, name: 'Trisan' },
-        comment: null,
-        supportingEvidence: 'my evidence',
-        userDescription: 'my user description',
-      },
-      {
-        user: { id: 1, name: 'Trisan' },
-        comment: 'my comment!',
-        supportingEvidence: null,
-        userDescription: 'my sole user description',
-      },
-    ],
-  },
-];
+      totalReportCount: row.totalReportCount,
+      posts: [{ imgUrl }],
+    };
+  });
+}
 
-const categoryTypes = [
-  { label: 'Health & Medicine', value: 'Health & Medicine' },
-  { label: 'Politics & Government', value: 'Politics & Government' },
-  { label: 'Science & Technology', value: 'Science & Technology' },
-  { label: 'Environment & Climate', value: 'Environment & Climate' },
-  { label: 'Finance & Economy', value: 'Finance & Economy' },
-];
+type RecentClaimItem = {
+  id: string;
+  title: string;
+  description: string;
+  imgUrl: string;
+  source: ClaimSource;
+  commentCount: number;
+};
+
+function mapPostRankingToRecentClaims(
+  data: PostRankingApiResponse
+): RecentClaimItem[] {
+  return data.posts.map((p) => ({
+    id: p.id,
+    title: p.headline ?? 'Untitled',
+    description: '',
+    imgUrl: p.thumbnailUrl ?? FALLBACK_THUMBNAIL,
+    source: mapSourceTypeToClaimSource(p.sourceType),
+    commentCount: p.commentCount,
+  }));
+}
+
+type PostsListState = {
+  posts: RecentClaimItem[];
+  totalCount: number;
+  page: number;
+  totalPages: number;
+};
+
+const INITIAL_POSTS_STATE: PostsListState = {
+  posts: [],
+  totalCount: 0,
+  page: 1,
+  totalPages: 0,
+};
 
 export default function ListingPage() {
   const [searchString, setSearchString] = useState('');
   const [selectedCategory, setSelectedCategory] = useState({
-    label: '',
+    label: 'All categories',
     value: '',
   });
+  const [trendingTopics, setTrendingTopics] = useState<ListingTrendingTopic[]>([]);
+  const [postsList, setPostsList] = useState<PostsListState>(INITIAL_POSTS_STATE);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const response = await fetch(
+          `/api/categories/ranking?limit=${TRENDING_TOPICS_LIMIT}`
+        );
+        if (cancelled) return;
+        if (!response.ok) return;
+        const data = (await response.json()) as CategoryRankingApiResponse;
+        if (cancelled) return;
+        setTrendingTopics(mapCategoryRankingToTrendingTopics(data));
+      } catch {
+        if (!cancelled) setTrendingTopics([]);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const categorySlug = selectedCategory.value.trim();
+    const params = new URLSearchParams({
+      page: String(postsList.page),
+      limit: String(RECENT_CLAIMS_LIMIT),
+    });
+    if (categorySlug) params.set('category', categorySlug);
+
+    async function load() {
+      try {
+        const response = await fetch(`/api/posts?${params.toString()}`);
+        if (cancelled) return;
+        if (!response.ok) return;
+        const data = (await response.json()) as PostRankingApiResponse;
+        if (cancelled) return;
+        setPostsList({
+          posts: mapPostRankingToRecentClaims(data),
+          totalCount: data.totalCount,
+          page: data.page,
+          totalPages: data.totalPages,
+        });
+      } catch {
+        if (!cancelled) setPostsList(INITIAL_POSTS_STATE);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [postsList.page, selectedCategory.value]);
+
   function handleSearch(query: string) {
     setSearchString(query);
   }
+
   function handleSelectCategory(option: { label: string; value: string }) {
     setSelectedCategory(option);
+    setPostsList((prev) => ({ ...prev, page: 1 }));
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPostsList((prev) => ({ ...prev, page: nextPage }));
   }
 
   return (
@@ -206,7 +173,7 @@ export default function ListingPage() {
         <div className={styles.searchSection}>
           <Searchbar text={searchString} onInput={handleSearch} />
           <CategoryFilter
-            data={categoryTypes}
+            data={CATEGORY_OPTIONS}
             selectedOption={selectedCategory}
             onInput={handleSelectCategory}
             placeholder='Select category'
@@ -214,16 +181,16 @@ export default function ListingPage() {
         </div>
         <span className={styles.sectionTitle}>Trending Topics</span>
         <div className={styles.trendSection}>
-          {trendingTopicData.map((topic, i) => (
+          {trendingTopics.map((topic, i) => (
             <TrendingTopicCom
               key={`trending-topic-${i}`}
-              imgUrl={topic.posts[0]?.imgUrl}
-              susCount={topic.totalPostCount}
+              imgUrl={topic.posts[0]?.imgUrl ?? FALLBACK_THUMBNAIL}
+              susCount={topic.totalReportCount}
               title={topic.category.name}
               onClick={() =>
                 handleSelectCategory({
                   label: topic.category.name,
-                  value: topic.category.name,
+                  value: topic.category.slug,
                 })
               }
             />
@@ -231,17 +198,41 @@ export default function ListingPage() {
         </div>
         <span className={styles.sectionTitle}>Recent Suspicious Claims</span>
         <div className={styles.susClaimSection}>
-          {susClaimData.map((claim, i) => (
-            <SuspiciousClaimRow
-              key={`claim-${i}`}
-              description={claim.aiSummary}
-              imgUrl={claim.imgUrl}
-              source={claim.sourceType}
-              title={claim.title}
-              commentCount={claim.comments.length}
-            />
+          {postsList.posts.map((claim) => (
+            <Link key={claim.id} href={`/listing/${claim.id}`} className={styles.claimLink}>
+              <SuspiciousClaimRow
+                description={claim.description}
+                imgUrl={claim.imgUrl}
+                source={claim.source}
+                title={claim.title}
+                commentCount={claim.commentCount}
+              />
+            </Link>
           ))}
         </div>
+        {postsList.totalPages > 1 && (
+          <nav className={styles.pagination} aria-label='Pagination'>
+            <button
+              type='button'
+              className={styles.paginationButton}
+              disabled={postsList.page <= 1}
+              onClick={() => handlePageChange(postsList.page - 1)}
+            >
+              Previous
+            </button>
+            <span className={styles.paginationInfo}>
+              Page {postsList.page} of {postsList.totalPages}
+            </span>
+            <button
+              type='button'
+              className={styles.paginationButton}
+              disabled={postsList.page >= postsList.totalPages}
+              onClick={() => handlePageChange(postsList.page + 1)}
+            >
+              Next
+            </button>
+          </nav>
+        )}
       </div>
     </div>
   );

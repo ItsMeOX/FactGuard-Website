@@ -48,3 +48,45 @@
   width: 100%;
   margin-bottom: 40px;
 }
+
+.claimLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
+
+.paginationButton {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #141414;
+  background-color: #fff;
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background-color: #e5e5e5;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationInfo {
+  font-size: 14px;
+  font-weight: 600;
+  color: #141414;
+}
