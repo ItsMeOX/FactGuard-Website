@@ -9,14 +9,10 @@
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "test": "jest",
     "test:watch": "jest --watch"
-  },
-  "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
@@ -41,7 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jest": "^30.2.0",
-    "prisma": "^6.19.2",
+    "prisma": "^7.4.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",

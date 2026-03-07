@@ -1,0 +1,84 @@
+import { prisma } from "@/lib/prisma";
+import { normalizeUrl } from "@/lib/utils/normalize-url";
+import type { CreateReportInput } from "@/lib/validators/report.validator";
+
+export type ReportResult = {
+  report: {
+    id: string;
+    headline: string;
+    reportDescription: string;
+    supportingEvidence: string | null;
+    platform: string;
+    status: string;
+    createdAt: Date;
+  };
+  postReportCount: number;
+};
+
+export async function createReport(
+  userId: string,
+  input: CreateReportInput
+): Promise<ReportResult> {
+  const normalized = normalizeUrl(input.sourceUrl);
+
+  let post = await prisma.post.findUnique({
+    where: { normalizedUrl: normalized },
+  });
+
+  if (!post) {
+    post = await prisma.post.create({
+      data: {
+        sourceUrl: input.sourceUrl,
+        normalizedUrl: normalized,
+        scrapeStatus: "pending",
+      },
+    });
+  }
+
+  const existing = await prisma.report.findUnique({
+    where: { postId_userId: { postId: post.id, userId } },
+  });
+  if (existing) {
+    throw new ReportError("You have already reported this post", 409);
+  }
+
+  const [report, updatedPost] = await prisma.$transaction([
+    prisma.report.create({
+      data: {
+        postId: post.id,
+        userId,
+        headline: input.headline,
+        platform: input.platform,
+        reportDescription: input.reportDescription,
+        supportingEvidence: input.supportingEvidence ?? null,
+      },
+    }),
+    prisma.post.update({
+      where: { id: post.id },
+      data: { reportCount: { increment: 1 } },
+    }),
+  ]);
+
+  return {
+    report: {
+      id: report.id,
+      headline: report.headline,
+      reportDescription: report.reportDescription,
+      supportingEvidence: report.supportingEvidence,
+      platform: report.platform,
+      status: report.status,
+      createdAt: report.createdAt,
+    },
+    postReportCount: updatedPost.reportCount,
+  };
+}
+
+export class ReportError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number
+  ) {
+    super(message);
+    this.name = "ReportError";
+  }
+}
