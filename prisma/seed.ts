@@ -28,16 +28,23 @@ function getSourceType(url: string): string {
 }
 
 function buildReportCommentContent(payload: {
+  reportId: string;
   headline: string;
   reportDescription: string;
   supportingEvidence: string | null;
+  messages?: { sender: string; text: string; timestamp?: string }[];
 }): string {
-  return JSON.stringify({
+  const content: Record<string, unknown> = {
     type: "report",
+    reportId: payload.reportId,
     headline: payload.headline,
     reportDescription: payload.reportDescription,
     supportingEvidence: payload.supportingEvidence,
-  });
+  };
+  if (payload.messages != null && payload.messages.length > 0) {
+    content.messages = payload.messages;
+  }
+  return JSON.stringify(content);
 }
 
 const CATEGORIES = [
@@ -53,11 +60,10 @@ const CATEGORIES = [
   { name: "Consumer & Product", slug: "consumer-product", description: "Claims about consumer products, safety recalls, and scams" },
 ];
 
-const SEED_USER = {
-  email: "reporter@example.com",
-  password: "password123",
-  displayName: "Seed Reporter",
-};
+const SEED_USERS = [
+  { email: "reporter@example.com", password: "password123", displayName: "Seed Reporter" },
+  { email: "test@example.com", password: "password123", displayName: "Test User" },
+];
 
 const FAKE_NEWS = [
   {
@@ -102,6 +108,32 @@ const FAKE_NEWS = [
   },
 ];
 
+const EXTENSION_CHAT_POSTS = [
+  {
+    normalizedUrl: "chat:whatsapp:seed-conv-1",
+    platform: "whatsapp",
+    headline: "Unverified health claims in WhatsApp group",
+    reportDescription: "Group chat contained claims about a miracle supplement with no scientific backing.",
+    supportingEvidence: "No peer-reviewed sources or FDA approval mentioned.",
+    messages: [
+      { sender: "User A", text: "This supplement cures cancer, my cousin tried it" },
+      { sender: "User B", text: "Where did you hear that? Any studies?" },
+      { sender: "User A", text: "It went viral on Facebook, everyone is sharing it" },
+    ],
+  },
+  {
+    normalizedUrl: "chat:telegram:seed-conv-2",
+    platform: "telegram",
+    headline: "Election fraud claims in private channel",
+    reportDescription: "Channel shared unverified documents alleging election fraud.",
+    supportingEvidence: null,
+    messages: [
+      { sender: "Admin", text: "Leaked documents prove fraud - link below" },
+      { sender: "Member", text: "Has this been verified by any news outlet?" },
+    ],
+  },
+];
+
 async function main() {
   for (const category of CATEGORIES) {
     await prisma.category.upsert({
@@ -112,18 +144,24 @@ async function main() {
   }
   console.log(`Seeded ${CATEGORIES.length} categories`);
 
-  const passwordHash = await bcrypt.hash(SEED_USER.password, SALT_ROUNDS);
-  const user = await prisma.user.upsert({
-    where: { email: SEED_USER.email },
-    update: { displayName: SEED_USER.displayName, passwordHash },
-    create: {
-      email: SEED_USER.email,
-      passwordHash,
-      displayName: SEED_USER.displayName,
-    },
-  });
-  console.log(`Seeded user: ${user.email} (use password "${SEED_USER.password}" for login)`);
+  const users: { id: string; email: string; displayName: string | null }[] = [];
+  for (const u of SEED_USERS) {
+    const passwordHash = await bcrypt.hash(u.password, SALT_ROUNDS);
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
+      update: { displayName: u.displayName, passwordHash },
+      create: {
+        email: u.email,
+        passwordHash,
+        displayName: u.displayName,
+      },
+    });
+    users.push({ id: user.id, email: user.email, displayName: user.displayName });
+  }
+  console.log(`Seeded ${users.length} users (login with any: password "password123")`);
+  users.forEach((u) => console.log(`  - ${u.email}`));
 
+  const seedUser = users[0];
   const categoryIds = await prisma.category.findMany({ select: { id: true, slug: true } });
   const slugToId = new Map(categoryIds.map((c) => [c.slug, c.id]));
 
@@ -145,37 +183,38 @@ async function main() {
     });
 
     const existingReport = await prisma.report.findUnique({
-      where: { postId_userId: { postId: post.id, userId: user.id } },
+      where: { postId_userId: { postId: post.id, userId: seedUser.id } },
     });
 
     if (!existingReport) {
-      await prisma.$transaction([
-        prisma.report.create({
+      await prisma.$transaction(async (tx) => {
+        const report = await tx.report.create({
           data: {
             postId: post.id,
-            userId: user.id,
+            userId: seedUser.id,
             headline: item.reportHeadline,
             platform: item.platform,
             reportDescription: item.reportDescription,
             supportingEvidence: item.supportingEvidence,
           },
-        }),
-        prisma.post.update({
+        });
+        await tx.post.update({
           where: { id: post.id },
           data: { reportCount: { increment: 1 } },
-        }),
-        prisma.comment.create({
+        });
+        await tx.comment.create({
           data: {
             postId: post.id,
-            userId: user.id,
+            userId: seedUser.id,
             content: buildReportCommentContent({
+              reportId: report.id,
               headline: item.reportHeadline,
               reportDescription: item.reportDescription,
               supportingEvidence: item.supportingEvidence,
             }),
           },
-        }),
-      ]);
+        });
+      });
     }
   }
 
@@ -187,16 +226,22 @@ async function main() {
   const healthId = slugToId.get("health-medicine");
   const politicsId = slugToId.get("politics-government");
   const viralId = slugToId.get("social-media-viral");
-  const categoryIdsToAssign = [healthId, politicsId, viralId].filter((id): id is number => id != null);
+  const categoryOptions = [healthId, politicsId, viralId].filter((id): id is number => id != null);
 
+  await Promise.all(
+    postsWithReports.flatMap((post, index) => {
+      const categoryId = categoryOptions[index % categoryOptions.length];
+      if (categoryId == null) return [];
+      return [
+        prisma.aiPostCategory.upsert({
+          where: { postId_categoryId: { postId: post.id, categoryId } },
+          update: {},
+          create: { postId: post.id, categoryId, confidence: 0.8 },
+        }),
+      ];
+    })
+  );
   for (const post of postsWithReports) {
-    for (const categoryId of categoryIdsToAssign.slice(0, 2)) {
-      await prisma.aiPostCategory.upsert({
-        where: { postId_categoryId: { postId: post.id, categoryId } },
-        update: {},
-        create: { postId: post.id, categoryId, confidence: 0.8 },
-      });
-    }
     await prisma.post.update({
       where: { id: post.id },
       data: {
@@ -210,6 +255,101 @@ async function main() {
   }
 
   console.log(`Seeded ${FAKE_NEWS.length} fake-news posts with reports and comments`);
+
+  const CHAT_SOURCE_TYPES: Record<string, string> = {
+    whatsapp: "WHATSAPP_CHAT",
+    telegram: "TELEGRAM_CHAT",
+    facebook: "FACEBOOK_CHAT",
+    instagram: "INSTAGRAM_CHAT",
+    signal: "SIGNAL_CHAT",
+  };
+  const PLATFORM_THUMBNAILS: Record<string, string> = {
+    whatsapp: "/platform-logos/whatsapp.png",
+    telegram: "/platform-logos/telegram.png",
+    facebook: "/platform-logos/facebook-messenger.png",
+    instagram: "/platform-logos/instagram.png",
+    signal: "/platform-logos/signal.png",
+  };
+
+  for (const item of EXTENSION_CHAT_POSTS) {
+    const sourceType = CHAT_SOURCE_TYPES[item.platform] ?? "CHAT_OTHER";
+    const thumbnailUrl = PLATFORM_THUMBNAILS[item.platform] ?? null;
+    const sourceUrl = `Chat conversation on ${item.platform} (no public URL)`;
+
+    const post = await prisma.post.upsert({
+      where: { normalizedUrl: item.normalizedUrl },
+      update: {},
+      create: {
+        sourceUrl,
+        normalizedUrl: item.normalizedUrl,
+        sourceType,
+        headline: item.headline,
+        thumbnailUrl,
+        processedStatus: "pending",
+        reportCount: 0,
+      },
+    });
+
+    const existingReport = await prisma.report.findUnique({
+      where: { postId_userId: { postId: post.id, userId: seedUser.id } },
+    });
+
+    if (!existingReport) {
+      await prisma.$transaction(async (tx) => {
+        const report = await tx.report.create({
+          data: {
+            postId: post.id,
+            userId: seedUser.id,
+            headline: item.headline,
+            platform: item.platform,
+            reportDescription: item.reportDescription,
+            supportingEvidence: item.supportingEvidence,
+          },
+        });
+        await tx.post.update({
+          where: { id: post.id },
+          data: { reportCount: { increment: 1 } },
+        });
+        await tx.comment.create({
+          data: {
+            postId: post.id,
+            userId: seedUser.id,
+            content: buildReportCommentContent({
+              reportId: report.id,
+              headline: item.headline,
+              reportDescription: item.reportDescription,
+              supportingEvidence: item.supportingEvidence,
+              messages: item.messages,
+            }),
+          },
+        });
+      });
+    }
+
+    const healthMedId = slugToId.get("health-medicine");
+    const politicsGovId = slugToId.get("politics-government");
+    const chatCategoryOptions = [healthMedId, politicsGovId].filter((id): id is number => id != null);
+    const categoryIndex = EXTENSION_CHAT_POSTS.indexOf(item);
+    const categoryId = chatCategoryOptions[categoryIndex % chatCategoryOptions.length];
+    if (categoryId != null) {
+      await prisma.aiPostCategory.upsert({
+        where: { postId_categoryId: { postId: post.id, categoryId } },
+        update: {},
+        create: { postId: post.id, categoryId, confidence: 0.75 },
+      });
+    }
+    await prisma.post.update({
+      where: { id: post.id },
+      data: {
+        processedStatus: "completed",
+        aiSummary: "Chat-based report assessed from user submission and message context.",
+        aiCredibilityScore: 30,
+        aiTransparencyNotes: "Assessment based on reported chat content and description. No external verification.",
+      },
+    });
+  }
+
+  console.log(`Seeded ${EXTENSION_CHAT_POSTS.length} extension chat posts with reports and messages`);
   console.log("Run your process-posts cron (or wait for it) to re-process pending posts with AI.");
 }
 
