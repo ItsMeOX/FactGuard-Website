@@ -2,6 +2,9 @@ import bcrypt from "bcrypt";
 import {
   registerUser,
   loginUser,
+  getProfile,
+  updateProfile,
+  changePassword,
   verifyToken,
   AuthError,
 } from "@/lib/services/auth.service";
@@ -20,6 +23,7 @@ jest.mock("@/lib/prisma", () => ({
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
@@ -28,6 +32,7 @@ import { prisma } from "@/lib/prisma";
 
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
+const mockUpdate = (prisma.user as unknown as { update: jest.Mock }).update;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -150,6 +155,191 @@ describe("loginUser", () => {
     } catch (e) {
       expect((e as AuthError).message).toBe("Invalid email or password");
     }
+  });
+});
+
+describe("getProfile", () => {
+  it("returns full profile with report count", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...mockUser,
+      _count: { reports: 5 },
+    });
+
+    const result = await getProfile(mockUser.id);
+
+    expect(result.id).toBe(mockUser.id);
+    expect(result.email).toBe(mockUser.email);
+    expect(result.displayName).toBe(mockUser.displayName);
+    expect(result.createdAt).toBe(mockUser.createdAt);
+    expect(result.reportCount).toBe(5);
+  });
+
+  it("queries with include _count for reports", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...mockUser,
+      _count: { reports: 0 },
+    });
+
+    await getProfile(mockUser.id);
+
+    expect(mockFindUnique).toHaveBeenCalledWith({
+      where: { id: mockUser.id },
+      include: { _count: { select: { reports: true } } },
+    });
+  });
+
+  it("returns reportCount of 0 for user with no reports", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...mockUser,
+      _count: { reports: 0 },
+    });
+
+    const result = await getProfile(mockUser.id);
+
+    expect(result.reportCount).toBe(0);
+  });
+
+  it("throws 404 if user does not exist", async () => {
+    mockFindUnique.mockResolvedValue(null);
+
+    await expect(getProfile("nonexistent-id")).rejects.toThrow(AuthError);
+    await expect(getProfile("nonexistent-id")).rejects.toMatchObject({
+      message: "User not found",
+      statusCode: 404,
+    });
+  });
+
+  it("does not expose passwordHash in the result", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...mockUser,
+      _count: { reports: 0 },
+    });
+
+    const result = await getProfile(mockUser.id);
+
+    expect(result).not.toHaveProperty("passwordHash");
+  });
+});
+
+describe("updateProfile", () => {
+  it("updates and returns the user with new display name", async () => {
+    mockFindUnique.mockResolvedValue(mockUser);
+    mockUpdate.mockResolvedValue({
+      ...mockUser,
+      displayName: "Updated Name",
+    });
+
+    const result = await updateProfile(mockUser.id, {
+      displayName: "Updated Name",
+    });
+
+    expect(result.displayName).toBe("Updated Name");
+    expect(result.id).toBe(mockUser.id);
+    expect(result.email).toBe(mockUser.email);
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: mockUser.id },
+      data: { displayName: "Updated Name" },
+    });
+  });
+
+  it("throws 404 if user does not exist", async () => {
+    mockFindUnique.mockResolvedValue(null);
+
+    await expect(
+      updateProfile("nonexistent-id", { displayName: "Name" })
+    ).rejects.toThrow(AuthError);
+    await expect(
+      updateProfile("nonexistent-id", { displayName: "Name" })
+    ).rejects.toMatchObject({
+      message: "User not found",
+      statusCode: 404,
+    });
+  });
+
+  it("does not call update if user is not found", async () => {
+    mockFindUnique.mockResolvedValue(null);
+
+    await expect(
+      updateProfile("nonexistent-id", { displayName: "Name" })
+    ).rejects.toThrow();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("changePassword", () => {
+  const validInput = {
+    currentPassword: "password123",
+    newPassword: "newpass1234",
+    confirmPassword: "newpass1234",
+  };
+
+  it("changes the password when current password is correct", async () => {
+    const hashed = await bcrypt.hash(validInput.currentPassword, 10);
+    mockFindUnique.mockResolvedValue({ ...mockUser, passwordHash: hashed });
+    mockUpdate.mockResolvedValue(mockUser);
+
+    await expect(
+      changePassword(mockUser.id, validInput)
+    ).resolves.toBeUndefined();
+
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    const updateCall = mockUpdate.mock.calls[0][0];
+    expect(updateCall.where.id).toBe(mockUser.id);
+    const isNewHash = await bcrypt.compare(
+      validInput.newPassword,
+      updateCall.data.passwordHash
+    );
+    expect(isNewHash).toBe(true);
+  });
+
+  it("throws 404 if user does not exist", async () => {
+    mockFindUnique.mockResolvedValue(null);
+
+    await expect(
+      changePassword("nonexistent-id", validInput)
+    ).rejects.toThrow(AuthError);
+    await expect(
+      changePassword("nonexistent-id", validInput)
+    ).rejects.toMatchObject({
+      message: "User not found",
+      statusCode: 404,
+    });
+  });
+
+  it("throws 401 if current password is incorrect", async () => {
+    const hashed = await bcrypt.hash("different-password", 10);
+    mockFindUnique.mockResolvedValue({ ...mockUser, passwordHash: hashed });
+
+    await expect(
+      changePassword(mockUser.id, validInput)
+    ).rejects.toThrow(AuthError);
+    await expect(
+      changePassword(mockUser.id, validInput)
+    ).rejects.toMatchObject({
+      message: "Current password is incorrect",
+      statusCode: 401,
+    });
+  });
+
+  it("does not call update if current password is wrong", async () => {
+    const hashed = await bcrypt.hash("wrong-password", 10);
+    mockFindUnique.mockResolvedValue({ ...mockUser, passwordHash: hashed });
+
+    await expect(
+      changePassword(mockUser.id, validInput)
+    ).rejects.toThrow();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("hashes the new password before storing", async () => {
+    const hashed = await bcrypt.hash(validInput.currentPassword, 10);
+    mockFindUnique.mockResolvedValue({ ...mockUser, passwordHash: hashed });
+    mockUpdate.mockResolvedValue(mockUser);
+
+    await changePassword(mockUser.id, validInput);
+
+    const updateCall = mockUpdate.mock.calls[0][0];
+    expect(updateCall.data.passwordHash).not.toBe(validInput.newPassword);
   });
 });
 
