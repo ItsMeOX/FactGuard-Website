@@ -1,7 +1,12 @@
 import bcrypt from "bcrypt";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
-import type { RegisterInput, LoginInput } from "@/lib/validators/auth.validator";
+import type {
+  RegisterInput,
+  LoginInput,
+  UpdateProfileInput,
+  ChangePasswordInput,
+} from "@/lib/validators/auth.validator";
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET = new TextEncoder().encode(
@@ -19,6 +24,14 @@ export type AuthUser = {
 export type AuthResult = {
   user: AuthUser;
   token: string;
+};
+
+export type UserProfile = {
+  id: string;
+  email: string;
+  displayName: string | null;
+  createdAt: Date;
+  reportCount: number;
 };
 
 export async function registerUser(input: RegisterInput): Promise<AuthResult> {
@@ -66,6 +79,66 @@ export async function loginUser(input: LoginInput): Promise<AuthResult> {
     user: { id: user.id, email: user.email, displayName: user.displayName },
     token,
   };
+}
+
+export async function getProfile(userId: string): Promise<UserProfile> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { _count: { select: { reports: true } } },
+  });
+  if (!user) {
+    throw new AuthError("User not found", 404);
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    createdAt: user.createdAt,
+    reportCount: user._count.reports,
+  };
+}
+
+export async function updateProfile(
+  userId: string,
+  input: UpdateProfileInput
+): Promise<AuthUser> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AuthError("User not found", 404);
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { displayName: input.displayName },
+  });
+
+  return {
+    id: updated.id,
+    email: updated.email,
+    displayName: updated.displayName,
+  };
+}
+
+export async function changePassword(
+  userId: string,
+  input: ChangePasswordInput
+): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AuthError("User not found", 404);
+  }
+
+  const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new AuthError("Current password is incorrect", 401);
+  }
+
+  const passwordHash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+  });
 }
 
 export async function verifyToken(token: string): Promise<AuthUser> {

@@ -1,4 +1,9 @@
-import { registerSchema, loginSchema } from "@/lib/validators/auth.validator";
+import {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+} from "@/lib/validators/auth.validator";
 
 describe("registerSchema", () => {
   it("accepts valid input with all fields", () => {
@@ -148,6 +153,99 @@ describe("loginSchema", () => {
 
   it("rejects empty object", () => {
     const result = loginSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("updateProfileSchema", () => {
+  it("accepts a valid display name", () => {
+    const result = updateProfileSchema.safeParse({ displayName: "New Name" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty display name", () => {
+    const result = updateProfileSchema.safeParse({ displayName: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects display name over 100 characters", () => {
+    const result = updateProfileSchema.safeParse({
+      displayName: "a".repeat(101),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts display name of exactly 100 characters", () => {
+    const result = updateProfileSchema.safeParse({
+      displayName: "a".repeat(100),
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects missing display name", () => {
+    const result = updateProfileSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("changePasswordSchema", () => {
+  const validInput = {
+    currentPassword: "oldpass123",
+    newPassword: "newpass123",
+    confirmPassword: "newpass123",
+  };
+
+  it("accepts valid input", () => {
+    const result = changePasswordSchema.safeParse(validInput);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects when new password is too short", () => {
+    const result = changePasswordSchema.safeParse({
+      ...validInput,
+      newPassword: "short",
+      confirmPassword: "short",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when new password is too long", () => {
+    const long = "a".repeat(73);
+    const result = changePasswordSchema.safeParse({
+      ...validInput,
+      newPassword: long,
+      confirmPassword: long,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when confirm password does not match", () => {
+    const result = changePasswordSchema.safeParse({
+      ...validInput,
+      confirmPassword: "mismatch123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when new password equals current password", () => {
+    const result = changePasswordSchema.safeParse({
+      currentPassword: "samepass123",
+      newPassword: "samepass123",
+      confirmPassword: "samepass123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty current password", () => {
+    const result = changePasswordSchema.safeParse({
+      ...validInput,
+      currentPassword: "",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects missing fields", () => {
+    const result = changePasswordSchema.safeParse({});
     expect(result.success).toBe(false);
   });
 });

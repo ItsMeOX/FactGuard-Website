@@ -36,16 +36,15 @@ model Post {
   scrapedContent      String?  @map("scraped_content") @db.Text
   aiSummary           String?  @map("ai_summary") @db.Text
   aiCredibilityScore  Float?   @map("ai_credibility_score")
-  aiCredibilityLabel  String?  @map("ai_credibility_label") @db.VarChar(50)
   aiTransparencyNotes String?  @map("ai_transparency_notes") @db.Text
   scrapeStatus        String   @default("pending") @map("scrape_status") @db.VarChar(20)
   reportCount         Int      @default(0) @map("report_count")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  reports        Report[]
-  comments       Comment[]
-  postCategories PostCategory[]
+  reports          Report[]
+  comments         Comment[]
+  aiPostCategories AiPostCategory[]
 
   @@index([reportCount(sort: Desc)], map: "idx_posts_report_count")
   @@index([createdAt(sort: Desc)], map: "idx_posts_created_at")
@@ -61,15 +60,14 @@ model Category {
   description String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
-  postCategories PostCategory[]
-  reports        Report[]
+  aiPostCategories AiPostCategory[]
 
   @@map("categories")
 }
 
-// ─── PostCategories (AI-assigned, many-to-many) ──────────────────────────────
+// ─── AiPostCategories (AI-assigned, many-to-many) ───────────────────────────
 
-model PostCategory {
+model AiPostCategory {
   postId     String   @map("post_id") @db.Uuid
   categoryId Int      @map("category_id")
   confidence Float?
@@ -79,8 +77,8 @@ model PostCategory {
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([postId, categoryId])
-  @@index([categoryId], map: "idx_post_categories_category_id")
-  @@map("post_categories")
+  @@index([categoryId], map: "idx_ai_post_categories_category_id")
+  @@map("ai_post_categories")
 }
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
@@ -90,7 +88,6 @@ model Report {
   postId             String   @map("post_id") @db.Uuid
   userId             String   @map("user_id") @db.Uuid
   headline           String   @db.VarChar(500)
-  categoryId         Int?     @map("category_id")
   platform           String   @db.VarChar(50)
   reportDescription  String   @map("report_description") @db.Text
   supportingEvidence String?  @map("supporting_evidence") @db.Text
@@ -98,9 +95,8 @@ model Report {
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   votes ReportVote[]
 
