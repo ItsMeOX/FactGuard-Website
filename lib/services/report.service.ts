@@ -38,8 +38,8 @@ export async function createReport(
     throw new ReportError("You have already reported this post", 409);
   }
 
-  const [report, updatedPost] = await prisma.$transaction([
-    prisma.report.create({
+  const [report, updatedPost] = await prisma.$transaction(async (tx) => {
+    const createdReport = await tx.report.create({
       data: {
         postId: post.id,
         userId,
@@ -48,23 +48,25 @@ export async function createReport(
         reportDescription: input.reportDescription,
         supportingEvidence: input.supportingEvidence ?? null,
       },
-    }),
-    prisma.post.update({
+    });
+    const updated = await tx.post.update({
       where: { id: post.id },
       data: { reportCount: { increment: 1 } },
-    }),
-    prisma.comment.create({
+    });
+    await tx.comment.create({
       data: {
         postId: post.id,
         userId,
         content: buildReportCommentContent({
+          reportId: createdReport.id,
           headline: input.headline,
           reportDescription: input.reportDescription,
           supportingEvidence: input.supportingEvidence ?? null,
         }),
       },
-    }),
-  ]);
+    });
+    return [createdReport, updated];
+  });
 
   if (isNewPost) {
     processPost(post.id).catch((err) =>

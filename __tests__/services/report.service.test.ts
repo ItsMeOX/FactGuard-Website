@@ -70,6 +70,17 @@ const mockReport = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockReportCreate.mockResolvedValue(mockReport);
+  mockPostUpdate.mockResolvedValue({ ...mockPost, reportCount: 1 });
+  mockCommentCreate.mockResolvedValue({});
+  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const mockTx = {
+      report: { create: mockReportCreate },
+      post: { update: mockPostUpdate },
+      comment: { create: mockCommentCreate },
+    };
+    return fn(mockTx);
+  });
 });
 
 describe("createReport", () => {
@@ -77,10 +88,6 @@ describe("createReport", () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     const result = await createReport(userId, validInput);
 
@@ -93,10 +100,7 @@ describe("createReport", () => {
   it("reuses existing post when normalizedUrl already exists", async () => {
     mockPostFindUnique.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 5 },
-    ]);
+    mockPostUpdate.mockResolvedValue({ ...mockPost, reportCount: 5 });
 
     const result = await createReport(userId, validInput);
 
@@ -108,10 +112,6 @@ describe("createReport", () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     await createReport(userId, validInput);
 
@@ -145,10 +145,6 @@ describe("createReport", () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     await createReport(userId, validInput);
 
@@ -165,10 +161,6 @@ describe("createReport", () => {
   it("passes correct data to the transaction", async () => {
     mockPostFindUnique.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     await createReport(userId, validInput);
 
@@ -178,10 +170,6 @@ describe("createReport", () => {
   it("creates a comment with report content as JSON when report is submitted", async () => {
     mockPostFindUnique.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     await createReport(userId, validInput);
 
@@ -192,6 +180,7 @@ describe("createReport", () => {
         userId,
         content: JSON.stringify({
           type: "report",
+          reportId: mockReport.id,
           headline: validInput.headline,
           reportDescription: validInput.reportDescription,
           supportingEvidence: validInput.supportingEvidence,
@@ -209,10 +198,7 @@ describe("createReport", () => {
     };
     mockPostFindUnique.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      { ...mockReport, supportingEvidence: null },
-      { ...mockPost, reportCount: 1 },
-    ]);
+    mockReportCreate.mockResolvedValue({ ...mockReport, supportingEvidence: null });
 
     const result = await createReport(userId, inputWithoutEvidence);
 
@@ -222,10 +208,6 @@ describe("createReport", () => {
   it("does not expose postId or userId in the returned report", async () => {
     mockPostFindUnique.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     const result = await createReport(userId, validInput);
 
@@ -237,10 +219,6 @@ describe("createReport", () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
 
     await createReport(userId, validInput);
 
@@ -250,10 +228,7 @@ describe("createReport", () => {
   it("does not fire processPost for existing posts", async () => {
     mockPostFindUnique.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 2 },
-    ]);
+    mockPostUpdate.mockResolvedValue({ ...mockPost, reportCount: 2 });
 
     await createReport(userId, validInput);
 
@@ -264,10 +239,6 @@ describe("createReport", () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
-    mockTransaction.mockResolvedValue([
-      mockReport,
-      { ...mockPost, reportCount: 1 },
-    ]);
     mockProcessPost.mockRejectedValue(new Error("Processing failed"));
     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
