@@ -31,6 +31,7 @@ model Post {
   id                  String   @id @default(uuid()) @db.Uuid
   sourceUrl           String   @map("source_url") @db.Text
   normalizedUrl       String   @unique @map("normalized_url") @db.VarChar(2048)
+  sourceType          String   @map("source_type") @db.VarChar(20)
   headline            String?  @db.VarChar(500)
   thumbnailUrl        String?  @map("thumbnail_url") @db.Text
   scrapedContent      String?  @map("scraped_content") @db.Text

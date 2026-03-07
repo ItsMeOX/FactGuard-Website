@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeUrl } from "@/lib/utils/normalize-url";
+import { getSourceType } from "@/lib/utils/get-source-type";
 import { processPost } from "@/lib/services/post-processing.service";
 import type { CreateReportInput } from "@/lib/validators/report.validator";
 
@@ -32,6 +33,7 @@ export async function createReport(
       data: {
         sourceUrl: input.sourceUrl,
         normalizedUrl: normalized,
+        sourceType: getSourceType(input.sourceUrl),
         scrapeStatus: "pending",
       },
     });

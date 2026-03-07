@@ -135,7 +135,7 @@ describe("createReport", () => {
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
-  it("creates post with pending scrapeStatus for new URLs", async () => {
+  it("creates post with pending scrapeStatus and derived sourceType for new URLs", async () => {
     mockPostFindUnique.mockResolvedValue(null);
     mockPostCreate.mockResolvedValue(mockPost);
     mockReportFindUnique.mockResolvedValue(null);
@@ -150,6 +150,7 @@ describe("createReport", () => {
       data: {
         sourceUrl: validInput.sourceUrl,
         normalizedUrl: "https://example.com/article",
+        sourceType: "WEBPAGE",
         scrapeStatus: "pending",
       },
     });
