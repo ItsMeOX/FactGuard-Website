@@ -218,6 +218,7 @@ export default function DetailPage() {
               supportEvidence={comment.supportingEvidence ?? ''}
               username={comment.user.name}
               messages={comment.messages}
+              createdAt={comment.createdAt}
               key={`comment-${i}`}
             />
           ))}

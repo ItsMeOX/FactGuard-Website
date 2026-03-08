@@ -1,5 +1,6 @@
 import styles from './comment.module.css';
 import type { ChatMessage } from '@/types/types';
+import { formatRelativeTime } from '@/lib/format-relative-time';
 
 export default function Comment({
   username,
@@ -7,19 +8,21 @@ export default function Comment({
   userDesc,
   supportEvidence,
   messages,
+  createdAt,
 }: {
   username: string;
   comment: string;
   userDesc: string;
   supportEvidence: string;
   messages?: ChatMessage[];
+  createdAt: Date;
 }) {
   return (
     <div className={styles.container}>
       <div className={styles.userSection}>
         <div className={styles.profilePic}>{username[0]}</div>
         <span className={styles.username}>{username}</span>
-        <span className={styles.time}>1 hour ago</span>
+        <span className={styles.time}>{formatRelativeTime(createdAt)}</span>
       </div>
       <div className={styles.commentSection}>
         <div className={styles.indent} />

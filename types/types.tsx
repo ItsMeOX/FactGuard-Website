@@ -178,5 +178,6 @@ export type ListingDetailData = {
     supportingEvidence: string | null;
     userDescription: string | null;
     messages?: ChatMessage[];
+    createdAt: Date;
   }>;
 };

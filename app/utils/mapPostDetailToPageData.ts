@@ -71,6 +71,7 @@ export function mapPostDetailToPageData(
       supportingEvidence,
       userDescription,
       messages,
+      createdAt: new Date(c.createdAt),
     };
   });
 
