@@ -50,6 +50,7 @@ export async function getCategoryRanking(
           headline: true,
           sourceType: true,
           thumbnailUrl: true,
+          aiSummary: true,
           reportCount: true,
           _count: { select: { comments: true } },
           reports: {
@@ -74,6 +75,7 @@ export async function getCategoryRanking(
       headline: p.headline,
       sourceType: p.sourceType,
       thumbnailUrl: p.thumbnailUrl,
+      aiSummary: p.aiSummary ?? null,
       reportCount: p.reportCount,
       commentCount: p._count.comments,
       latestReportAt: p.reports[0]?.createdAt ?? null,

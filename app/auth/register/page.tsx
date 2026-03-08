@@ -148,7 +148,7 @@ export default function RegisterPage() {
     <div className={styles.container}>
       <div className={styles.form}>
         <div className={styles.inputSection}>
-          <span className={styles.title}>Register user</span>
+          <span className={styles.title}>Register an account</span>
           <div className={styles.input}>
             <TextInput
               title='Username'
@@ -182,7 +182,7 @@ export default function RegisterPage() {
           </button>
           <span className={styles.newUser}>
             Existing user?
-            <Link href='/auth/login'>login</Link>
+            <Link href='/auth/login'>Log in here</Link>
           </span>
         </div>
         <div className={styles.artSection}>
