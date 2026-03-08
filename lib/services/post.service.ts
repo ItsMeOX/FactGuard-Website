@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { GetPostsInput } from "@/lib/validators/post.validator";
 import type {
-  PostRankingItem,
   PostRankingResult,
   PostDetail,
   PostDetailComment,
@@ -107,6 +106,7 @@ export async function getPostById(postId: string): Promise<PostDetail | null> {
           content: true,
           createdAt: true,
           parentCommentId: true,
+          user: { select: { displayName: true } },
         },
       },
       aiPostCategories: {
@@ -125,6 +125,7 @@ export async function getPostById(postId: string): Promise<PostDetail | null> {
     commentMap.set(c.id, {
       id: c.id,
       userId: c.userId,
+      userName: c.user?.displayName ?? null,
       content: c.content,
       createdAt: c.createdAt,
       parentCommentId: c.parentCommentId,

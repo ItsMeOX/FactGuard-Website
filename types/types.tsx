@@ -148,6 +148,7 @@ export type PostDetailApiResponse = {
   comments: Array<{
     id: string;
     userId: string | null;
+    userName: string | null;
     content: string;
     createdAt: string;
     parentCommentId: string | null;

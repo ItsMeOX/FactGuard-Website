@@ -50,6 +50,7 @@ const mockPostRow = {
       }),
       createdAt: new Date("2026-01-02T10:00:00Z"),
       parentCommentId: null,
+      user: { displayName: "Alice" },
     },
   ],
   aiPostCategories: [
@@ -77,6 +78,7 @@ describe("getPostById", () => {
     expect(result!.reports).toHaveLength(1);
     expect(result!.reports[0].platform).toBe("Facebook");
     expect(result!.comments).toHaveLength(1);
+    expect(result!.comments[0].userName).toBe("Alice");
     expect(result!.comments[0].content).toContain("reportId");
   });
 
@@ -98,6 +100,7 @@ describe("getPostById", () => {
           content: "Root comment",
           createdAt: new Date("2026-01-02T10:00:00Z"),
           parentCommentId: null,
+          user: { displayName: "Alice" },
         },
         {
           id: "comment-2",
@@ -105,6 +108,7 @@ describe("getPostById", () => {
           content: "Reply",
           createdAt: new Date("2026-01-02T11:00:00Z"),
           parentCommentId: "comment-1",
+          user: { displayName: "Bob" },
         },
       ],
     };
@@ -113,7 +117,9 @@ describe("getPostById", () => {
     const result = await getPostById(POST_ID);
 
     expect(result!.comments).toHaveLength(1);
+    expect(result!.comments[0].userName).toBe("Alice");
     expect(result!.comments[0].replies).toHaveLength(1);
     expect(result!.comments[0].replies[0].content).toBe("Reply");
+    expect(result!.comments[0].replies[0].userName).toBe("Bob");
   });
 });

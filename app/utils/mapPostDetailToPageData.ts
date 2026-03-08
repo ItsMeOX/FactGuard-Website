@@ -66,7 +66,7 @@ export function mapPostDetailToPageData(
     const { comment, userDescription, supportingEvidence, messages } =
       parseCommentContent(c.content);
     return {
-      user: { id: 0, name: UNKNOWN_USER_NAME },
+      user: { id: 0, name: c.userName ?? UNKNOWN_USER_NAME },
       comment,
       supportingEvidence,
       userDescription,

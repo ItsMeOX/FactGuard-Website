@@ -47,6 +47,7 @@ const mockDetail = {
     {
       id: "comment-1",
       userId: "user-1",
+      userName: "Alice",
       content: '{"type":"report","reportId":"report-1","headline":"Report 1"}',
       createdAt: "2026-01-02T10:00:00Z",
       parentCommentId: null,

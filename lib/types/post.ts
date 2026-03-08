@@ -35,6 +35,7 @@ export type PostDetailReport = {
 export type PostDetailComment = {
   id: string;
   userId: string | null;
+  userName: string | null;
   content: string;
   createdAt: Date;
   parentCommentId: string | null;
